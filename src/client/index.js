@@ -1,1 +1,2 @@
-module.exports = require('./templates/main.js');
+const mainTemplate = require('./templates/main.js');
+module.exports = mainTemplate;

@@ -33,10 +33,30 @@ module.exports = ({cssPath, jsPath, content}) => `
         margin-left: 10px;
         padding-left: 10px;
       }
+      .new-note {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          font-size: 25px;
+          font-weight: bold;
+          background-color: rgba(238, 238, 238, 0.40);
+          display: block;
+          width: 30px;
+          height: 30px;
+          line-height: 26px;
+          text-align: center;
+          border-radius: 15px;
+          text-decoration: none;
+          color: black;
+      }
+      .new-note:hover {
+        background-color: rgba(238, 238, 238, 0.60);
+      }
     </style>
   </head>
   <body>
     <textarea autofocus id="notepad" name="notepad">${content}</textarea>
+    <a class="new-note" href='/new/' target="_blank">+</a>
     <script>
       function debounce(func, wait, immediate) {
         var timeout;
@@ -54,7 +74,7 @@ module.exports = ({cssPath, jsPath, content}) => `
       };
       var area = document.querySelector('textarea');
       function save(){
-        fetch('/', {
+        fetch('./', {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
