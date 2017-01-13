@@ -7,7 +7,64 @@
   <link rel="stylesheet" href="${cssPath}">
   <script type="text/javascript" src="${jsPath}"></script>
 */
-module.exports = ({cssPath, jsPath, content}) => `
+
+function script({readOnly, noteId, }){
+  if(!readOnly){
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function() {
+          var context = this, args = arguments;
+            var later = function() {
+              timeout = null;
+              if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+          if (callNow) func.apply(context, args);
+        };
+      };
+    var area = document.querySelector('textarea');
+    // initialize websockets:
+
+    var HOST = location.origin.replace(/^http/, 'ws');
+    var ws = new WebSocket(HOST);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: 'register',
+        id: noteId,
+      }));
+    };
+
+    ws.onmessage = (message) => {
+      area.value = message.data;
+    }
+
+    function save(){
+      // For now do these in parallel
+      ws.send(JSON.stringify({
+        type: 'update',
+        id: noteId,
+        content: area.value,
+      }));
+
+      // But don't obvs do them in parallel later
+      fetch('./', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: "POST",
+        body: JSON.stringify({content: area.value})
+      });
+    }
+
+    area.addEventListener('input', debounce(save, 500), false);
+  }
+}
+
+module.exports = ({cssPath, jsPath, content, readOnly, noteId}) => `
 <!DOCTYPE html>
 <html>
   <head>
@@ -58,32 +115,8 @@ module.exports = ({cssPath, jsPath, content}) => `
     <textarea autofocus id="notepad" name="notepad">${content}</textarea>
     <a class="new-note" href='/new/' target="_blank">+</a>
     <script>
-      function debounce(func, wait, immediate) {
-        var timeout;
-        return function() {
-          var context = this, args = arguments;
-            var later = function() {
-              timeout = null;
-              if (!immediate) func.apply(context, args);
-            };
-            var callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-          if (callNow) func.apply(context, args);
-        };
-      };
-      var area = document.querySelector('textarea');
-      function save(){
-        fetch('./', {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          method: "POST",
-          body: JSON.stringify({content: area.value})
-        });
-      }
-      area.addEventListener('input', debounce(save, 500), false);
+      // some seriously quick and dirty metaprogramming
+      (${script.toString()})(${JSON.stringify({readOnly, noteId})});
     </script>
   </body>
 </html>
