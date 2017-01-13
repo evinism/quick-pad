@@ -18,14 +18,20 @@ module.exports = ({cssPath, jsPath, content}) => `
       }
       body {
         height: 100%;
+        background-color: #12141c;
       }
       textarea {
-        width: 100%;
+        width: calc(100% - 20px);
         height: 100%;
+        font-size: 22px;
         border: none;
         background-color: transparent;
         resize: none;
         outline: none;
+        color: #eeeeee;
+        border-left: 3px solid #33333a;
+        margin-left: 10px;
+        padding-left: 10px;
       }
     </style>
   </head>
