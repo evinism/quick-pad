@@ -2,23 +2,19 @@ const  express = require('express');
 const renderClient = require('../client');
 var bodyParser = require('body-parser');
 
-function run(port) {
+function run() {
   console.log('quick-pad starting');
   var app = express();
-  app.set('port', (port || 8080));
+  app.set('port', (process.env.PORT || 8080));
 
   app.use(bodyParser.json());
   app.use(express.static('/src/client/assets'));
 
   // literally just hack in content
-  let content = 'hello world';
+  let content = 'type here to begin...';
 
   app.get('/', function(request, response) {
-    response.send(renderClient({
-      cssPath: 'main.css',
-      jsPath: 'main.js',
-      content,
-    }));
+    response.send(renderClient({content}));
   });
 
   app.post('/', function(request, response){
