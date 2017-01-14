@@ -10,49 +10,33 @@
 
 function script({readOnly, noteId, }){
   if(!readOnly){
-    function debounce(func, wait, immediate) {
-      var timeout;
-      return function() {
-        var context = this, args = arguments;
-          var later = function() {
-            timeout = null;
-            if (!immediate) func.apply(context, args);
-          };
-          var callNow = immediate && !timeout;
-          clearTimeout(timeout);
-          timeout = setTimeout(later, wait);
-        if (callNow) func.apply(context, args);
-      };
-    };
-
     function throttle (callback, limit) {
-      var wait = false;                 // Initially, we're not waiting
-      return function () {              // We return a throttled function
-        if (!wait) {                  // If we're not waiting
-          callback.call();          // Execute users function
-          wait = true;              // Prevent future invocations
-          setTimeout(function () {  // After a period of time
-              wait = false;         // And allow future invocations
+      var wait = false;
+      return function () {
+        if (!wait) {
+          callback.call();
+          wait = true;
+          setTimeout(function () {
+              wait = false;
           }, limit);
         }
       }
     }
-    var area = document.querySelector('textarea');
-    // initialize websockets:
 
-    var HOST = location.origin.replace(/^http/, 'ws');
-    var ws = new WebSocket(HOST);
-
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: 'register',
-        id: noteId,
-      }));
+    function debounce(func, wait, immediate) {
+      var timeout;
+      return function() {
+        var context = this, args = arguments;
+        var later = function() {
+          timeout = null;
+          if (!immediate) func.apply(context, args);
+        };
+        var callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func.apply(context, args);
+      };
     };
-
-    ws.onmessage = (message) => {
-      area.value = message.data;
-    }
 
     function save(){
       // For now do these in parallel
@@ -73,7 +57,27 @@ function script({readOnly, noteId, }){
       });
     }
 
-    area.addEventListener('input', throttle(save, 500), false);
+    const throttledSave = throttle(save, 200);
+    const debouncedSave = debounce(save, 500);
+
+    const area = document.querySelector('textarea');
+    var HOST = location.origin.replace(/^http/, 'ws');
+    var ws = new WebSocket(HOST);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: 'register',
+        id: noteId,
+      }));
+    };
+
+    ws.onmessage = (message) => {
+      area.value = message.data;
+    }
+    area.addEventListener('input', function(){
+      throttledSave();
+      debouncedSave();
+    }, false);
   }
 }
 

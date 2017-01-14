@@ -1,3 +1,4 @@
+require('dotenv').config();
 const  express = require('express');
 const renderClient = require('../client');
 const bodyParser = require('body-parser');
@@ -76,34 +77,47 @@ function run() {
   // ---- live update ----
   // Super super super rough
   let clientsOnIds = {};
+
+  function broadcastForId(message, id, origin){
+    console.log('broadcasting ' + message + ' for ' + id);
+    const currentClients = clientsOnIds[id] || [];
+    currentClients.filter(client => client !== origin).forEach((client) => {
+      console.log('sending message: %s', message);
+      client.send(message);
+    })
+  }
+
+  function registerClientForId(ws, id){
+    const currentClients = clientsOnIds[id] || [];
+    currentClients.push(ws);
+    clientsOnIds[id] = currentClients;
+    console.log(`added client for ${id} at pos ${currentClients.length - 1} of table`);
+  }
+
+  function deregisterClientForId(ws, id){
+    const currentClients = clientsOnIds[id];
+    const idx = currentClients.indexOf(ws);
+    currentClients.splice(idx, 1);
+    clientsOnIds[id] = currentClients;
+  }
+
   wss.on('connection', function(ws){
     let id;
     console.log('Client connected');
     ws.on('close', () => {
       if(id){
-        const currentClients = clientsOnIds[id];
-        const idx = currentClients.indexOf(ws);
-        currentClients.splice(idx, 1);
-        clientsOnIds[id] = currentClients;
+        deregisterClientForId(ws, id)
+        console.log('Client disconnected');
       };
-      console.log('Client disconnected');
     });
     ws.on('message', (message) => {
       console.log('Message recieved: ' +  message);
       let parsed = JSON.parse(message);
       if (parsed.type === 'register') {
-        id = parsed.id;
-        const currentClients = clientsOnIds[id] || [];
-        currentClients.push(ws);
-        clientsOnIds[id] = currentClients;
-        console.log(`added client for ${id} at pos ${currentClients.length - 1} of table`);
+        registerClientForId(ws, parsed.id);
       } else if(parsed.type === 'update') {
-        const message = parsed.content;
-        const currentClients = clientsOnIds[id] || [];
-        currentClients.filter(client => client !== ws).forEach((client) => {
-          client.send(message);
-        })
         console.log('Update recieved');
+        broadcastForId(parsed.content, parsed.id, ws);
       } else {
         console.log('Unknown message type-- ignoring!');
       }
