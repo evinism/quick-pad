@@ -11,18 +11,27 @@ var pg = require('pg');
   );
 */
 
-// Postgres config TODO: Make it so that server doesn't listen before
 // TODO: pool clients
 // pg initialize
-if (process.env.DATABASE_USE_SSL === true) {
-  pg.defaults.ssl = true;
-}
-var client = new pg.Client(process.env.DATABASE_URL);
+let client;
 
-client.connect(function(err, client) {
-  if (err) throw err;
-  console.log('client connected to postgres!');
-});
+function dbInit(){
+  return new Promise((resolve, reject) => {
+    if (process.env.DATABASE_USE_SSL === true) {
+      pg.defaults.ssl = true;
+    }
+
+    client = new pg.Client(process.env.DATABASE_URL);
+
+    client.connect(function(err, client) {
+      if (err) throw err;
+      console.log('client connected to postgres!');
+      resolve({success: true});
+    });
+  })
+
+}
+
 
 
 /* Fake db store */
@@ -99,4 +108,4 @@ function create() {
   });
 }
 
-module.exports = {create, persist, recall, exists, destroy};
+module.exports = {create, persist, recall, exists, destroy, dbInit};
