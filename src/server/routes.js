@@ -41,6 +41,8 @@ function configureRoutes(app){
   // handles 404s too
   app.get('/note/:id/', function(request, response) {
     const id = request.params.id;
+    const autofocus = request.query.autofocus !== 'false';
+    console.log(autofocus);
     exists(id).then(
       doesExist => doesExist ? (
         recall(id).then(
@@ -48,6 +50,7 @@ function configureRoutes(app){
             content: content,
             noteId: id,
             readOnly: false,
+            autofocus,
           }))
         )
       ) : (

@@ -8,7 +8,8 @@
   <script type="text/javascript" src="${jsPath}"></script>
 */
 
-function script({readOnly, noteId, }){
+function script({readOnly, noteId, autofocus}){
+  console.log(autofocus);
   if(!readOnly){
     function throttle (callback, limit) {
       var wait = false;
@@ -81,7 +82,7 @@ function script({readOnly, noteId, }){
   }
 }
 
-module.exports = ({cssPath, jsPath, content, readOnly, noteId}) => `
+module.exports = ({cssPath, jsPath, content, readOnly, noteId, autofocus = true}) => `
 <!DOCTYPE html>
 <html>
   <head>
@@ -130,11 +131,11 @@ module.exports = ({cssPath, jsPath, content, readOnly, noteId}) => `
     </style>
   </head>
   <body>
-    <textarea autofocus id="notepad" name="notepad">${content}</textarea>
+    <textarea ${autofocus ? 'autofocus' : ''} id="notepad" name="notepad">${content}</textarea>
     <a class="new-note" href='/new/' target="_blank">+</a>
     <script>
       // some seriously quick and dirty metaprogramming
-      (${script.toString()})(${JSON.stringify({readOnly, noteId})});
+      (${script.toString()})(${JSON.stringify({readOnly, noteId, autofocus})});
     </script>
   </body>
 </html>
