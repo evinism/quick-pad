@@ -86,6 +86,7 @@ module.exports = ({cssPath, jsPath, content, readOnly, noteId}) => `
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <style>
       html {
         height: calc(100% - 20px);
