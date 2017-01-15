@@ -9,7 +9,6 @@
 */
 
 function script({readOnly, noteId, autofocus}){
-  console.log(autofocus);
   if(!readOnly){
     function throttle (callback, limit) {
       var wait = false;

@@ -6,9 +6,11 @@ function initSockets(server) {
   let clientsOnIds = {};
   function broadcastForId(message, id, origin){
     const currentClients = clientsOnIds[id] || [];
-    currentClients.filter(client => client !== origin).forEach((client) => {
-      client.send(message);
-    })
+    currentClients
+      .filter(socket => socket !== origin)
+      // Dumb safeguard against being in a weird state. TODO: figure out why websockets aren't closing properly
+      .filter(socket => socket.readyState === 1)
+      .forEach((client) => client.send(message));
   }
 
   function registerClientForId(ws, id){
@@ -33,6 +35,7 @@ function initSockets(server) {
         console.log('Client disconnected');
       };
     });
+
     ws.on('message', (message) => {
       let parsed = JSON.parse(message);
       if (parsed.type === 'register') {

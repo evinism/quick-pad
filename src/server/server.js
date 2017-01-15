@@ -3,7 +3,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const configureRoutes = require('./routes.js');
 const initSockets = require('./socket.js');
-const {dbInit} = require('./store.js');
+const {initDb} = require('./store.js');
+const initCron = require('./fake_cron.js');
 
 /* main function */
 function run() {
@@ -15,11 +16,12 @@ function run() {
   app.use(bodyParser.json());
   app.use(express.static('public'));
   configureRoutes(app);
-  dbInit().then(() => {
+  initDb().then(() => {
     const server = app.listen(app.get('port'), function() {
       console.log('Node app is running on port', app.get('port'));
     });
     initSockets(server);
+    initCron();
   })
 }
 

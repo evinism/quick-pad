@@ -7,6 +7,7 @@ var pg = require('pg');
   // ---
   CREATE TABLE notes (
     id varchar(8) PRIMARY KEY,
+    lastuse timestamp NOT NULL,
     content text NOT NULL
   );
 */
@@ -15,21 +16,18 @@ var pg = require('pg');
 // pg initialize
 let client;
 
-function dbInit(){
+function initDb(){
   return new Promise((resolve, reject) => {
     if (process.env.DATABASE_USE_SSL === true) {
       pg.defaults.ssl = true;
     }
-
     client = new pg.Client(process.env.DATABASE_URL);
-
     client.connect(function(err, client) {
       if (err) throw err;
       console.log('client connected to postgres!');
       resolve({success: true});
     });
   })
-
 }
 
 
@@ -40,7 +38,7 @@ function persist(id, content) {
   return new Promise((resolve, reject) => {
     client.query(
       {
-        text: "UPDATE notes SET content = $2 WHERE id = $1",
+        text: "UPDATE notes SET content = $2, lastuse = now() WHERE id = $1",
         values: [id, content],
       },
       (err, result) => {
@@ -97,7 +95,7 @@ function create() {
     console.log(`Creating note ${newId}`);
     client.query(
       {
-        text: "INSERT INTO notes VALUES ($1, '');", // TODO: move empty string default in postgres, not here
+        text: "INSERT INTO notes VALUES ($1, now(), '');", // TODO: move empty string default in postgres, not here
         values: [newId],
       },
       (err) => {
@@ -108,4 +106,21 @@ function create() {
   });
 }
 
-module.exports = {create, persist, recall, exists, destroy, dbInit};
+// destroys notes that are greater than 30 days old;
+function destroyOldNotes() {
+  return new Promise((resolve, reject) => {
+    console.log('Deleting old notes...');
+    client.query(
+      {
+        text: "DELETE FROM notes WHERE lastuse <= (now() - interval '30 days');"
+      },
+      (err) => {
+        if (err) throw err;
+        console.log('Deleted!');
+        resolve({success: true});
+      }
+    );
+  });
+}
+
+module.exports = {create, persist, recall, exists, destroy, initDb, destroyOldNotes};
