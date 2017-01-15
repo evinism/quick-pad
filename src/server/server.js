@@ -5,7 +5,6 @@ const configureRoutes = require('./routes.js');
 const initSockets = require('./socket.js');
 
 /* main function */
-
 function run() {
   console.log('quick-pad starting');
 
@@ -14,7 +13,6 @@ function run() {
   app.set('port', (process.env.PORT || 8080));
   app.use(bodyParser.json());
   app.use(express.static('public'));
-
   configureRoutes(app);
 
   const server = app.listen(app.get('port'), function() {

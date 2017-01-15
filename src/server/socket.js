@@ -15,7 +15,6 @@ function initSockets(server) {
     const currentClients = clientsOnIds[id] || [];
     currentClients.push(ws);
     clientsOnIds[id] = currentClients;
-    console.log(`added client for ${id} at pos ${currentClients.length - 1} of table`);
   }
 
   function deregisterClientForId(ws, id){
@@ -41,7 +40,7 @@ function initSockets(server) {
       } else if(parsed.type === 'update') {
         broadcastForId(parsed.content, parsed.id, ws);
       } else {
-        console.log('Unknown message type-- ignoring!');
+        console.log(`Unknown message type "${parsed.type}"-- ignoring!`);
       }
     });
   });

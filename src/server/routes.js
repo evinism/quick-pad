@@ -20,6 +20,8 @@ The note at this address either was not created or has been deleted.
 Click the (+) to create a new note.
 `;
 
+
+// TODO: use promises a little better than I'm doing right now
 function configureRoutes(app){
   // root is read-only info page
   app.get('/', function(request, response) {
@@ -31,31 +33,37 @@ function configureRoutes(app){
 
   // new will redirect to the properly
   app.get('/new/', function(request, response) {
-    const newId = create();
-    response.redirect(`/note/${newId}/`)
+    create().then(
+      (newId) => response.redirect(`/note/${newId}/`)
+    );
   });
 
   // handles 404s too
   app.get('/note/:id/', function(request, response) {
     const id = request.params.id;
-    if (exists(id)) {
-      response.send(renderClient({
-        content: recall(id),
-        noteId: id,
-        readOnly: false,
-      }));
-    } else {
-      response.status(404).send(renderClient({
-        content: noteNotFoundText,
-        readOnly: true,
-      }));
-    }
+    exists(id).then(
+      doesExist => doesExist ? (
+        recall(id).then(
+          content => response.send(renderClient({
+            content: content,
+            noteId: id,
+            readOnly: false,
+          }))
+        )
+      ) : (
+        response.status(404).send(renderClient({
+          content: noteNotFoundText,
+          readOnly: true,
+        }))
+      )
+    )
   });
 
   app.post('/note/:id/', function(request, response){
     const id = request.params.id;
-    persist(id, request.body.content || '')
-    response.status(200).json({success: true});
+    persist(id, request.body.content || '').then(
+      () => response.status(200).json({success: true})
+    );
   });
 }
 
