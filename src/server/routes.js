@@ -20,6 +20,13 @@ The note at this address either was not created or has been deleted.
 Click the (+) to create a new note.
 `;
 
+const pageNotFoundText = `
+404: page not found
+---
+
+The page you requested does not exist.
+`;
+
 
 // TODO: use promises a little better than I'm doing right now
 function configureRoutes(app){
@@ -65,6 +72,13 @@ function configureRoutes(app){
     persist(id, request.body.content || '').then(
       () => response.status(200).json({success: true})
     );
+  });
+
+  app.get('*', function(request, response){
+    response.status(404).send(renderClient({
+      content: pageNotFoundText,
+      readOnly: true,
+    }))
   });
 }
 

@@ -81,12 +81,13 @@ function script({readOnly, noteId, autofocus}){
   }
 }
 
-module.exports = ({cssPath, jsPath, content, readOnly, noteId, autofocus = true}) => `
+module.exports = ({cssPath, jsPath, content, readOnly, noteId, autofocus = true, title = 'Quick-Pad'}) => `
 <!DOCTYPE html>
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <title>${title}</title>
     <style>
       html {
         height: calc(100% - 20px);
