@@ -81,7 +81,7 @@ function script({readOnly, noteId, autofocus}){
   }
 }
 
-module.exports = ({cssPath, jsPath, content, readOnly, noteId, autofocus = true, title = 'Quick-Pad'}) => `
+module.exports = ({cssPath, jsPath, content, readOnly, noteId, autofocus = true, title = 'quick-pad'}) => `
 <!DOCTYPE html>
 <html>
   <head>

@@ -53,6 +53,7 @@ function configureRoutes(app){
         recall(id).then(
           content => response.send(renderClient({
             content: content,
+            title: 'quick-pad: note',
             noteId: id,
             readOnly: false,
             autofocus,
@@ -61,6 +62,7 @@ function configureRoutes(app){
       ) : (
         response.status(404).send(renderClient({
           content: noteNotFoundText,
+          title: 'quick-pad: note not found',
           readOnly: true,
         }))
       )
@@ -77,6 +79,7 @@ function configureRoutes(app){
   app.get('*', function(request, response){
     response.status(404).send(renderClient({
       content: pageNotFoundText,
+      title: 'quick-pad: page not found',
       readOnly: true,
     }))
   });
