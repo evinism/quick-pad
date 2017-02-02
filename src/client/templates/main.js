@@ -100,6 +100,7 @@ module.exports = ({cssPath, jsPath, content, readOnly, noteId, autofocus = true,
         width: calc(100% - 20px);
         height: 100%;
         font-size: 22px;
+        font-family: Courier New;
         border: none;
         background-color: transparent;
         resize: none;
