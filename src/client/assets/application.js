@@ -55,8 +55,8 @@ if(!readOnly){
   const debouncedSave = debounce(save, 500);
 
   const area = document.querySelector('textarea');
-  var HOST = location.origin.replace(/^http/, 'ws');
-  var ws = new WebSocket(HOST);
+  const HOST = location.origin.replace(/^http/, 'ws');
+  const ws = new WebSocket(HOST);
 
   ws.onopen = () => {
     ws.send(JSON.stringify({
