@@ -23,18 +23,18 @@ textarea {
   position: absolute;
   top: 20px;
   right: 20px;
-  font-size: 25px;
-  font-weight: bold;
   background-color: rgba(238, 238, 238, 0.40);
   display: block;
   width: 30px;
   height: 30px;
-  line-height: 26px;
   text-align: center;
   border-radius: 15px;
-  text-decoration: none;
-  color: black;
 }
+
+.new-note > svg {
+  margin: 7px;
+}
+
 .new-note:hover {
   background-color: rgba(238, 238, 238, 0.60);
 }
