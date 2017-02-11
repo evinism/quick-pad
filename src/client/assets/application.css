@@ -97,6 +97,10 @@ textarea {
   background-color: rgba(238, 238, 238, 0.80);
 }
 
+#viewer-count-indicator {
+  width: auto;
+}
+
 #view-count-indicator > * {
   margin: 7px 0;
 }

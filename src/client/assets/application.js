@@ -74,15 +74,14 @@ function render(stateToRender){
   }
 
   // view counter stuff
-  const otherViewerCount = Math.max(stateToRender.viewerCount - 1, 0);
   const viewerElem = document.getElementById('viewer-count-indicator');
-  if (otherViewerCount) {
+  if (stateToRender.viewerCount > 1) {
     viewerElem.classList.remove('hidden');
   } else {
     viewerElem.classList.add('hidden');
   }
   const viewNumberElem = document.getElementById('viewer-count-number');
-  viewNumberElem.innerHTML = otherViewerCount;
+  viewNumberElem.innerHTML = stateToRender.viewerCount + ' viewing';
 }
 
 // Initial state
