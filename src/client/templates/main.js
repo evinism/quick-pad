@@ -4,9 +4,11 @@
 
 const fs = require('fs');
 
+// load assets for inlining
 const jsString = fs.readFileSync('./src/client/assets/application.js');
-const cssString = fs.readFileSync('./src/client/assets/application.css')
-
+const cssString = fs.readFileSync('./src/client/assets/application.css');
+const listSvg = fs.readFileSync('./src/client/assets/svg/list.svg');
+const plusSvg = fs.readFileSync('./src/client/assets/svg/plus.svg');
 
 module.exports = ({
   content,
@@ -26,13 +28,22 @@ module.exports = ({
     </style>
   </head>
   <body>
+    <div id="note-list-wrapper" class="hidden">
+      <div>
+        <h2>recent notes <br>--- </h2>
+        <ul id="note-list">
+        </ul>
+      </div>
+    </div>
     <textarea ${autofocus ? 'autofocus' : ''} id="notepad" name="notepad">${content}</textarea>
-    <a class="new-note" href='/new/' target="_blank">
-      <svg width="16" height="16">
-        <line x1="0" y1="8" x2="16" y2="8" stroke="#000" stroke-width="3"/>
-        <line x1="8" y1="0" x2="8" y2="16" stroke="#000" stroke-width="3"/>
-      </svg>
-    </a>
+    <div class="command-strip">
+      <a class="new-note command-button" href="/new/" target="_blank">
+        ${plusSvg}
+      </a>
+      <div class="command-button" id="list-toggler">
+        ${listSvg}
+      </div>
+    </div>
     <script>
       const Environment = ${JSON.stringify({readOnly, noteId, autofocus})};
       ${jsString}
