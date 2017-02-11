@@ -6,6 +6,7 @@ body {
   background-color: #12141c;
   display: flex;
   overflow: hidden;
+  font-family: Courier New;
 }
 
 textarea {
@@ -24,7 +25,6 @@ textarea {
 }
 
 #note-list-wrapper {
-  font-family: Courier New;
   color: #eeeeee;
   transition: width 0.3s;
   overflow-x: hidden;
@@ -74,11 +74,9 @@ textarea {
   height: 30px;
   text-align: center;
   border-radius: 15px;
-  margin-left: 5px;
   opacity: 1;
   transition: width 0.2s, margin 0.2s, opacity 0.3s 0.2s, background-color 0.2s;
   overflow: hidden;
-  cursor: pointer;
 }
 
 .command-button.hidden {
@@ -91,6 +89,14 @@ textarea {
   margin: 7px;
 }
 
-.command-strip > .command-button:hover, .command-strip > .command-button.active {
+.command-button.hoverable {
+  cursor: pointer;
+}
+
+.command-strip > .command-button.hoverable:hover, .command-strip > .command-button.active {
   background-color: rgba(238, 238, 238, 0.80);
+}
+
+#view-count-indicator > * {
+  margin: 7px 0;
 }

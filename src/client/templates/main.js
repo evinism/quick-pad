@@ -37,10 +37,13 @@ module.exports = ({
     </div>
     <textarea ${autofocus ? 'autofocus' : ''} id="notepad" name="notepad">${content}</textarea>
     <div class="command-strip">
-      <a class="new-note command-button" href="/new/" target="_blank">
+      <div class="command-button hidden" id="viewer-count-indicator">
+        <div id="viewer-count-number"></div>
+      </div>
+      <a class="command-button hoverable" id="new-note" href="/new/" target="_blank">
         ${plusSvg}
       </a>
-      <div class="command-button" id="list-toggler">
+      <div class="command-button hoverable" id="list-toggler">
         ${listSvg}
       </div>
     </div>
