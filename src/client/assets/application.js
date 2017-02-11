@@ -34,7 +34,7 @@ function render(stateToRender){
   //can move this outside of render tbh
   const listHtml = stateToRender.displayedRecentNotes.map(
     id => `<li><a href="/note/${id}/">${id}</a></li>`
-  ).reduce((a, b) => a + b);
+  ).reduce((a, b) => a + b, '');
   document.getElementById('note-list').innerHTML = listHtml;
 }
 
