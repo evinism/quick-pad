@@ -3,28 +3,28 @@ const renderClient = require('../client');
 
 const homeScreenText = `
 quick-pad:
-dead simple collaborative notepad
+dead-simple collaborative notepad
 ---
 
-Click the (+) to create a new note
-Send the link to share
+Click (+) to create a new note.
+Send the link to share.
 
-Notes expire after 30 days of disuse
+Notes expire after 30 days of disuse.
 `;
 
 const noteNotFoundText = `
-404: note not found
+404: Note not found
 ---
 
-The note at this address either was not created or has been deleted.
-Click the (+) to create a new note.
+The note at this address either has not been created or has been deleted.
+Click (+) to create a new note.
 `;
 
 const pageNotFoundText = `
 404: page not found
 ---
 
-The page you requested does not exist.
+Oops! Nothing exists here.
 `;
 
 
