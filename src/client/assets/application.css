@@ -60,6 +60,7 @@ textarea {
   top: 20px;
   right: 20px;
   position: fixed;
+  cursor: text;
 }
 
 .command-strip:hover > .command-button {
