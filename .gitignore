@@ -38,3 +38,4 @@ jspm_packages
 
 # environment vars
 .env
+elm-stuff
