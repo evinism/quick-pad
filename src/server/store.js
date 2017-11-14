@@ -127,12 +127,9 @@ function destroyOldNotes() {
 function checkStatus(ids){
   return new Promise((resolve, reject) => {
     console.log('Status check for ids: ' + JSON.stringify(ids));
-    const q = `SELECT id, content FROM notes WHERE id IN (${ids.map(id => pgescape.literal(id)).join(', ')});`;
-    console.log("Query: " + q);
     client.query(
       {
-        // lol sql injection rn. TODO: fix this.
-        text: q,
+        text: `SELECT id, content FROM notes WHERE id IN (${ids.map(id => pgescape.literal(id)).join(', ')});`,
       },
       (err, queryResult) => {
         if (err) throw err;

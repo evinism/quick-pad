@@ -64,22 +64,23 @@ function debounce(func, wait, immediate) {
   }
 
   function renderAndPersist(statuses) {
+    statuses = statuses.sort(
+      (a, b) => (recentNotes.indexOf(a.id) - recentNotes.indexOf(b.id))
+    );
+
     const listHtml = statuses.map(
       ({ id, abbreviation }) => `<li><a href="/note/${id}/">${abbreviation || '[no title]'}</a></li>`
     ).reduce((a, b) => a + b, '');
     document.getElementById('note-list').innerHTML = listHtml;
 
     // and persist the notes that remain.
-    // this strategy is chosen to maintain order.
     const remainingIds = statuses.map(status => status.id);
-    let nextNotes = recentNotes.filter(id => remainingIds.includes(id));
-
     if(noteId){
-      nextNotes.unshift(noteId);
+      remainingIds.unshift(noteId);
     }
     console.log('set of notes:');
-    console.log(nextNotes);
-    localStorage.setItem('notes', JSON.stringify(nextNotes));
+    console.log(remainingIds);
+    localStorage.setItem('notes', JSON.stringify(remainingIds));
   }
 })();
 
