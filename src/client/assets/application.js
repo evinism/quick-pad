@@ -36,22 +36,52 @@ function debounce(func, wait, immediate) {
 /* end utility functions */
 
 /* recent notes through localStorage */
-const recentNotes = JSON.parse(
-  localStorage.getItem('notes') || '[]'
-).filter(record => noteId !== record);
+(function initRecentNotes(){
+  const recentNotes = JSON.parse(
+    localStorage.getItem('notes') || '[]'
+  ).filter(record => noteId !== record);
 
-if(noteId){
-  recentNotes.unshift(noteId);
-  localStorage.setItem('notes', JSON.stringify(recentNotes));
-}
+  displayedRecentNotes = recentNotes.filter(record => noteId !== record);
+  console.log('from localstorage:');
+  console.log(displayedRecentNotes);
 
-displayedRecentNotes = recentNotes.filter(record => noteId !== record);
+  if (displayedRecentNotes.length > 0) {
+    // do a quick status update on all
+    const fetchParams = {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids: displayedRecentNotes }),
+    };
+    fetch('/statusCheck', fetchParams)
+      .catch(() => {})
+      .then(response => response.json())
+      .then(renderAndPersist);
+  } else {
+    renderAndPersist([]);
+  }
 
-const listHtml = displayedRecentNotes.map(
-  id => `<li><a href="/note/${id}/">${id}</a></li>`
-).reduce((a, b) => a + b, '');
+  function renderAndPersist(statuses) {
+    const listHtml = statuses.map(
+      ({ id, abbreviation }) => `<li><a href="/note/${id}/">${abbreviation || '[no title]'}</a></li>`
+    ).reduce((a, b) => a + b, '');
+    document.getElementById('note-list').innerHTML = listHtml;
 
-document.getElementById('note-list').innerHTML = listHtml;
+    // and persist the notes that remain.
+    // this strategy is chosen to maintain order.
+    const remainingIds = statuses.map(status => status.id);
+    let nextNotes = recentNotes.filter(id => remainingIds.includes(id));
+
+    if(noteId){
+      nextNotes.unshift(noteId);
+    }
+    console.log('set of notes:');
+    console.log(nextNotes);
+    localStorage.setItem('notes', JSON.stringify(nextNotes));
+  }
+})();
 
 /* Stupid state management soln: */
 let state;

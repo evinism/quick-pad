@@ -1,4 +1,4 @@
-const {create, persist, recall, exists, destroy} = require('./store.js');
+const {create, persist, recall, exists, destroy, checkStatus} = require('./store.js');
 const renderClient = require('../client');
 
 const homeScreenText = `
@@ -73,6 +73,28 @@ function configureRoutes(app){
     const id = request.params.id;
     persist(id, request.body.content || '').then(
       () => response.status(200).json({success: true})
+    );
+  });
+
+  app.post('/statusCheck', function(request, response){
+    const ids = request.body.ids;
+    if(!Array.isArray(ids)){
+      response.status(400).json({success: false});
+      return;
+    }
+    if(ids.length > 1000){
+      response.status(400).json({
+        success: false,
+        video: 'https://www.youtube.com/watch?v=Q5N_GPkSS6c',
+      });
+      return;
+    }
+    if (ids.length === 0) {
+      response.status(200).json([]);
+      return;
+    }
+    checkStatus(ids).then(
+      statuses => response.status(200).json(statuses)
     );
   });
 

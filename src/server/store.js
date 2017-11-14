@@ -1,5 +1,6 @@
 const v4 = require('uuid/v4');
-var pg = require('pg');
+const pg = require('pg');
+const pgescape = require('pg-escape');
 
 /*
   TODO: find a better place for this
@@ -123,4 +124,34 @@ function destroyOldNotes() {
   });
 }
 
-module.exports = {create, persist, recall, exists, destroy, initDb, destroyOldNotes};
+function checkStatus(ids){
+  return new Promise((resolve, reject) => {
+    console.log('Status check for ids: ' + JSON.stringify(ids));
+    const q = `SELECT id, content FROM notes WHERE id IN (${ids.map(id => pgescape.literal(id)).join(', ')});`;
+    console.log("Query: " + q);
+    client.query(
+      {
+        // lol sql injection rn. TODO: fix this.
+        text: q,
+      },
+      (err, queryResult) => {
+        if (err) throw err;
+        const statuses = queryResult.rows.map(({id, content}) => {
+          let abbreviation = content.split('\n')[0];
+          // Lol this is shit:
+          const cutoff = 50
+          if (abbreviation.length > cutoff) {
+            abbreviation = abbreviation.slice(0, cutoff);
+          }
+          return ({
+            id,
+            abbreviation,
+          });
+        });
+        resolve(statuses);
+      }
+    );
+  });
+}
+
+module.exports = {create, persist, recall, exists, checkStatus, destroy, initDb, destroyOldNotes};

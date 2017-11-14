@@ -30,11 +30,13 @@ textarea {
   overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
-  width: 160px;
+  width: 200px;
 }
 
 #note-list a {
   color: inherit;
+  white-space: nowrap;
+  line-height: 21px;
 }
 
 #note-list-wrapper.hidden {
