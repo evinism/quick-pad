@@ -2,7 +2,6 @@
 
 const {readOnly, noteId, autofocus} = Environment;
 
-
 /* Utility functions */
 // both throttle and debounce from stackOverflow
 function throttle(callback, limit) {
@@ -42,9 +41,6 @@ function debounce(func, wait, immediate) {
   ).filter(record => noteId !== record);
 
   displayedRecentNotes = recentNotes.filter(record => noteId !== record);
-  console.log('from localstorage:');
-  console.log(displayedRecentNotes);
-
   if (displayedRecentNotes.length > 0) {
     // do a quick status update on all
     const fetchParams = {
@@ -78,8 +74,6 @@ function debounce(func, wait, immediate) {
     if(noteId){
       remainingIds.unshift(noteId);
     }
-    console.log('set of notes:');
-    console.log(remainingIds);
     localStorage.setItem('notes', JSON.stringify(remainingIds));
   }
 })();
@@ -150,11 +144,10 @@ if(!readOnly){
           area.value = content;
           break;
         case 'viewerCount':
-          console.log('recieved viewerCount of ' + content);
           setState({viewerCount: content});
           break;
         default:
-          console.log(`Unknown message type ${type}`)
+          console.warn(`Unknown message type ${type}`);
       }
     }
 
