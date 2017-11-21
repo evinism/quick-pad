@@ -112,7 +112,9 @@ if(!readOnly){
           area.value = content;
           break;
         case 'viewerCount':
-          setState({viewerCount: content});
+          setState({
+            viewerCount: content
+          });
           break;
         default:
           console.warn(`Unknown message type ${type}`);
@@ -120,21 +122,10 @@ if(!readOnly){
     });
 
     save = function(){
-      // For now do these in parallel
       socket.send({
         type: 'update',
         id: noteId,
         content: area.value,
-      });
-
-      // But don't obvs do them in parallel later
-      fetch('./', {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: "POST",
-        body: JSON.stringify({content: area.value})
       });
     }
 
@@ -144,7 +135,7 @@ if(!readOnly){
 
   // configure socket
   const HOST = location.origin.replace(/^http/, 'ws');
-  const ws = io(HOST);//new WebSocket(HOST);
+  const ws = io(HOST);
   attachSocketToApp(ws);
 
   // Event listeners

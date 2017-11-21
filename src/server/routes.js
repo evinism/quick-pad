@@ -1,4 +1,4 @@
-const {create, persist, recall, exists, destroy, checkStatus} = require('./store.js');
+const { create, persist, recall, exists, destroy, checkStatus } = require('./store.js');
 const renderClient = require('../client');
 
 const homeScreenText = `

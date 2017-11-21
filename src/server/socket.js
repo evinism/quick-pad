@@ -1,5 +1,6 @@
 const WebSocket = require('ws');
 const socketio = require('socket.io');
+const { persist } = require('./store.js');
 
 function initSockets(server) {
   const io = socketio(server);
@@ -11,8 +12,6 @@ function initSockets(server) {
     const currentClients = clientsOnIds[id] || [];
     currentClients
       .filter(socket => socket !== origin)
-      // Dumb safeguard against being in a weird state. TODO: figure out why websockets aren't closing properly
-      //.filter(socket => socket.readyState === 1)
       .forEach(socket => socket.send(message));
   }
 
@@ -86,6 +85,11 @@ function initSockets(server) {
             { type: 'replace', content: message.content },
             message.id,
             ws
+          );
+          // and persist changes to db
+          persist(
+            message.id,
+            message.content
           );
           break;
         default:

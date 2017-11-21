@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 var enforce = require('express-sslify');
 const configureRoutes = require('./routes.js');
 const initSockets = require('./socket.js');
-const {initDb} = require('./store.js');
+const { initDb } = require('./store.js');
 const initCron = require('./fake_cron.js');
 
 /* main function */

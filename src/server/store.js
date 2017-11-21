@@ -126,7 +126,6 @@ function destroyOldNotes() {
 
 function checkStatus(ids){
   return new Promise((resolve, reject) => {
-    console.log('Status check for ids: ' + JSON.stringify(ids));
     client.query(
       {
         text: `SELECT id, content FROM notes WHERE id IN (${ids.map(id => pgescape.literal(id)).join(', ')});`,
