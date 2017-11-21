@@ -38,3 +38,6 @@ jspm_packages
 
 # environment vars
 .env
+
+# buildfile.
+build/

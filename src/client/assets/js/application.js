@@ -1,38 +1,5 @@
-;(function(){
-
+import { throttle, debounce } from './util';
 const {readOnly, noteId, autofocus} = Environment;
-
-/* Utility functions */
-// both throttle and debounce from stackOverflow
-function throttle(callback, limit) {
-  var wait = false;
-  return function () {
-    if (!wait) {
-      callback.call();
-      wait = true;
-      setTimeout(function () {
-          wait = false;
-      }, limit);
-    }
-  }
-}
-
-function debounce(func, wait, immediate) {
-  var timeout;
-  return function() {
-    var context = this, args = arguments;
-    var later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    var callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
-};
-
-/* end utility functions */
 
 /* recent notes through localStorage */
 (function initRecentNotes(){
@@ -40,7 +7,7 @@ function debounce(func, wait, immediate) {
     localStorage.getItem('notes') || '[]'
   ).filter(record => noteId !== record);
 
-  displayedRecentNotes = recentNotes.filter(record => noteId !== record);
+  const displayedRecentNotes = recentNotes.filter(record => noteId !== record);
   if (displayedRecentNotes.length > 0) {
     // do a quick status update on all
     const fetchParams = {
@@ -185,5 +152,3 @@ if(!readOnly){
     debouncedSave();
   }, false);
 }
-
-})();

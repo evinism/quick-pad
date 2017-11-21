@@ -21,6 +21,7 @@ function run() {
 
   app.use(bodyParser.json());
   app.use(express.static('public'));
+  app.use(express.static('build'));
   configureRoutes(app);
   initDb().then(() => {
     const server = app.listen(app.get('port'), function() {

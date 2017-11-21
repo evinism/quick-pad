@@ -4,8 +4,6 @@
 
 const fs = require('fs');
 
-// load assets for inlining
-const jsString = fs.readFileSync('./src/client/assets/application.js');
 const cssString = fs.readFileSync('./src/client/assets/application.css');
 const listSvg = fs.readFileSync('./src/client/assets/svg/list.svg');
 const plusSvg = fs.readFileSync('./src/client/assets/svg/plus.svg');
@@ -49,8 +47,8 @@ module.exports = ({
     </div>
     <script>
       const Environment = ${JSON.stringify({readOnly, noteId, autofocus})};
-      ${jsString}
     </script>
+    <script src="/application.js"></script>
   </body>
 </html>
 `;
