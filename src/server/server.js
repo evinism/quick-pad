@@ -1,4 +1,5 @@
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 const bodyParser = require('body-parser');
 var enforce = require('express-sslify');
@@ -24,10 +25,11 @@ function run() {
   app.use(express.static('build'));
   configureRoutes(app);
   initDb().then(() => {
-    const server = app.listen(app.get('port'), function() {
+    var server = http.createServer(app);
+    initSockets(server);
+    server.listen(app.get('port'), function() {
       console.log('Node app is running on port', app.get('port'));
     });
-    initSockets(server);
     initCron();
   })
 }

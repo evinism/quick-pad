@@ -1,5 +1,6 @@
+import io from 'socket.io-client';
 import { throttle, debounce } from './util';
-const {readOnly, noteId, autofocus} = Environment;
+const { readOnly, noteId, autofocus } = Environment;
 
 /* recent notes through localStorage */
 (function initRecentNotes(){
@@ -96,15 +97,15 @@ if(!readOnly){
   let debouncedSave;
 
   function attachSocketToApp(socket){
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
+    socket.on('connect', () => {
+      socket.send({
         type: 'register',
         id: noteId,
-      }));
-    };
+      });
+    });
 
-    ws.onmessage = (message) => {
-      const { type, content } = JSON.parse(message.data);
+    socket.on('message', (message) => {
+      const { type, content } = message;
       switch(type){
         case 'replace':
           // TODO: move area.value to state tree.
@@ -116,15 +117,15 @@ if(!readOnly){
         default:
           console.warn(`Unknown message type ${type}`);
       }
-    }
+    });
 
     save = function(){
       // For now do these in parallel
-      ws.send(JSON.stringify({
+      socket.send({
         type: 'update',
         id: noteId,
         content: area.value,
-      }));
+      });
 
       // But don't obvs do them in parallel later
       fetch('./', {
@@ -143,7 +144,7 @@ if(!readOnly){
 
   // configure socket
   const HOST = location.origin.replace(/^http/, 'ws');
-  const ws = new WebSocket(HOST);
+  const ws = io(HOST);//new WebSocket(HOST);
   attachSocketToApp(ws);
 
   // Event listeners

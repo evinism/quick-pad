@@ -1,7 +1,8 @@
 const WebSocket = require('ws');
+const socketio = require('socket.io');
 
 function initSockets(server) {
-  const wss = new WebSocket.Server({ server });
+  const io = socketio(server);
 
   let clientsOnIds = {};
 
@@ -11,16 +12,13 @@ function initSockets(server) {
     currentClients
       .filter(socket => socket !== origin)
       // Dumb safeguard against being in a weird state. TODO: figure out why websockets aren't closing properly
-      .filter(socket => socket.readyState === 1)
-      .forEach((client) => client.send(JSON.stringify(message)));
+      //.filter(socket => socket.readyState === 1)
+      .forEach(socket => socket.send(message));
   }
 
   function broadcastForAllInId(message, id){
     const currentClients = clientsOnIds[id] || [];
-    currentClients
-      // Dumb safeguard against being in a weird state. TODO: figure out why websockets aren't closing properly
-      .filter(socket => socket.readyState === 1)
-      .forEach((client) => client.send(JSON.stringify(message)));
+    currentClients.forEach(socket => socket.send(message));
   }
 
   function numClientsForId(id){
@@ -52,9 +50,9 @@ function initSockets(server) {
     );
   }
 
-  wss.on('connection', function(ws){
+  io.on('connection', function(ws){
     let id;
-    ws.on('close', () => {
+    ws.on('disconnect', () => {
       if(id){
         deregisterClientForId(ws, id)
       };
@@ -76,29 +74,28 @@ function initSockets(server) {
         'viewerCount' indicates the viewer count has changed.
     */
 
-    ws.on('message', (message) => {
-      let parsed = JSON.parse(message);
-      switch (parsed.type){
+    ws.on('message', message => {
+      switch (message.type){
         case 'register':
-          registerClientForId(ws, parsed.id);
-          id = parsed.id
+          registerClientForId(ws, message.id);
+          id = message.id
           break;
         case 'update':
           // slap the same update command back to all users
           broadcastForId(
-            { type: 'replace', content: parsed.content },
-            parsed.id,
+            { type: 'replace', content: message.content },
+            message.id,
             ws
           );
           break;
         default:
-          console.log(`Unknown message type "${parsed.type}"-- ignoring!`);
+          console.log(`Unknown message type "${message.type}"-- ignoring!`);
           break;
       }
     });
   });
 
-  return wss;
+  return io;
 }
 
 module.exports = initSockets;
