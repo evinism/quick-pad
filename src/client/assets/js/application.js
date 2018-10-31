@@ -1,14 +1,16 @@
 import io from 'socket.io-client';
-import { throttle, debounce } from './util';
-const { readOnly, noteId, autofocus } = Environment;
+import { throttle, debounce, noteUrlToNoteID } from './util';
+const { readOnly, noteId: pageLoadNoteId, autofocus, createFromEdit=false } = Environment;
+
+const area = document.querySelector('textarea');
 
 /* recent notes through localStorage */
 (function initRecentNotes(){
   const recentNotes = JSON.parse(
     localStorage.getItem('notes') || '[]'
-  ).filter(record => noteId !== record);
+  ).filter(record => pageLoadNoteId !== record);
 
-  const displayedRecentNotes = recentNotes.filter(record => noteId !== record);
+  const displayedRecentNotes = recentNotes.filter(record => pageLoadNoteId !== record);
   if (displayedRecentNotes.length > 0) {
     // do a quick status update on all
     const fetchParams = {
@@ -39,8 +41,8 @@ const { readOnly, noteId, autofocus } = Environment;
 
     // and persist the notes that remain.
     const remainingIds = statuses.map(status => status.id);
-    if(noteId){
-      remainingIds.unshift(noteId);
+    if(pageLoadNoteId){
+      remainingIds.unshift(pageLoadNoteId);
     }
     localStorage.setItem('notes', JSON.stringify(remainingIds));
   }
@@ -88,9 +90,7 @@ document.getElementById('list-toggler').addEventListener('click', function toggl
 }, false);
 
 // Nonstatic page junk
-if(!readOnly){
-  const area = document.querySelector('textarea');
-
+function hookIntoNoteChanges(noteId){
   /* saving logic */
   let save;
   let throttledSave;
@@ -143,4 +143,20 @@ if(!readOnly){
     throttledSave();
     debouncedSave();
   }, false);
+}
+
+if(!readOnly){
+  hookIntoNoteChanges(pageLoadNoteId);
+}
+
+if(createFromEdit){
+  function enableEdit(){
+    fetch('new').then((response) => {
+      const noteId = noteUrlToNoteID(response.url);
+      history.replaceState({ noteId }, 'quick-pad: note', '/note/' + noteId);
+      hookIntoNoteChanges(noteId);
+    });
+    area.removeEventListener('input', enableEdit);
+  }
+  area.addEventListener('input', enableEdit);
 }
