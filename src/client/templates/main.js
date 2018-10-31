@@ -26,13 +26,13 @@ module.exports = ({
     <meta name="twitter:title" content="quick-pad">
     <meta name="twitter:description" content="Dead simple collaborative notepad">
     <meta name="twitter:site" content="@evinism">
-    <meta name="twitter:image" content="https://quick-pad.org/note_example.png">
+    <meta name="twitter:image" content="https://www.quick-pad.org/note_example.png">
 
     <!-- Open Graph data -->
     <meta property="og:title" content="quick-pad" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://quick-pad.org/" />
-    <meta property="og:image" content="https://quick-pad.org/note_example.png" />
+    <meta property="og:url" content="https://www.quick-pad.org/" />
+    <meta property="og:image" content="https://www.quick-pad.org/note_example.png" />
     <meta property="og:description" content="Dead simple collaborative notepad" />
     <title>${title}</title>
     <style>
