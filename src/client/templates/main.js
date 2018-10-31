@@ -20,6 +20,20 @@ module.exports = ({
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Twitter Card data -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="quick-pad">
+    <meta name="twitter:description" content="Dead simple collaborative notepad">
+    <meta name="twitter:site" content="@evinism">
+    <meta name="twitter:image" content="https://quick-pad.org/note_example.png">
+
+    <!-- Open Graph data -->
+    <meta property="og:title" content="quick-pad" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://quick-pad.org/" />
+    <meta property="og:image" content="https://quick-pad.org/note_example.png" />
+    <meta property="og:description" content="Dead simple collaborative notepad" />
     <title>${title}</title>
     <style>
       ${cssString}
