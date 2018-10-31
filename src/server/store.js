@@ -37,14 +37,10 @@ function initDb(){
 const store = {};
 function persist(id, content) {
   return new Promise((resolve, reject) => {
-    // For some reason this leads to locks on my local db. 
-    // Shimming this pgescape in there for the time being
-    // This is really unfortunate
-    const qval = pgescape("UPDATE notes SET content = %Q, lastuse = now() WHERE id = %Q", content, id)
     client.query(
       {
-        text: qval,
-        //values: [id, content],
+        text: "UPDATE notes SET content = $2, lastuse = now() WHERE id = $1",
+        values: [id, content],
       },
       (err, result) => {
         if (err) throw err;
