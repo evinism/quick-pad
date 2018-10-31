@@ -1,6 +1,6 @@
 import io from 'socket.io-client';
 import { throttle, debounce, noteUrlToNoteID, enableTabsOnTextArea } from './util';
-const { readOnly, noteId: pageLoadNoteId, autofocus, createFromEdit=false } = Environment;
+const { interactionStyle, noteId: pageLoadNoteId } = Environment;
 
 const area = document.querySelector('textarea');
 
@@ -147,16 +147,21 @@ function hookIntoNoteChanges(noteId){
   }, false);
 }
 
-if(!readOnly){
+if (interactionStyle === 'editable') {
   hookIntoNoteChanges(pageLoadNoteId);
-}
-
-if(createFromEdit){
+} else if(interactionStyle === 'createOnEdit'){
   function enableEdit(){
     fetch('new').then((response) => {
-      const noteId = noteUrlToNoteID(response.url);
-      history.replaceState({ noteId }, 'quick-pad: note', '/note/' + noteId);
-      hookIntoNoteChanges(noteId);
+      const newNoteId = noteUrlToNoteID(response.url);
+      // on creation, append this note to start of local notes
+      // TODO: this is not DRY at all
+      const lsString = localStorage.getItem('notes') || '[]'
+      const noteIds = JSON.parse(lsString);
+      noteIds.unshift(newNoteId);
+      localStorage.setItem('notes', JSON.stringify(noteIds));
+
+      history.replaceState({ newNoteId }, 'quick-pad: note', '/note/' + newNoteId);
+      hookIntoNoteChanges(newNoteId);
     });
     area.removeEventListener('input', enableEdit);
   }
