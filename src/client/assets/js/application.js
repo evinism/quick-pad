@@ -1,8 +1,10 @@
 import io from 'socket.io-client';
-import { throttle, debounce, noteUrlToNoteID } from './util';
+import { throttle, debounce, noteUrlToNoteID, enableTabsOnTextArea } from './util';
 const { readOnly, noteId: pageLoadNoteId, autofocus, createFromEdit=false } = Environment;
 
 const area = document.querySelector('textarea');
+
+enableTabsOnTextArea(area);
 
 /* recent notes through localStorage */
 (function initRecentNotes(){
