@@ -9,11 +9,9 @@ const listSvg = fs.readFileSync('./src/client/assets/svg/list.svg');
 const plusSvg = fs.readFileSync('./src/client/assets/svg/plus.svg');
 
 module.exports = ({
+  interactionStyle = 'readOnly',
   content,
-  readOnly,
   noteId,
-  autofocus = true,
-  createFromEdit = false,
   title = 'quick-pad'
 }) => `
 <!DOCTYPE html>
@@ -48,7 +46,7 @@ module.exports = ({
         </ul>
       </div>
     </div>
-    <textarea ${autofocus ? 'autofocus' : ''} id="notepad" name="notepad">${content}</textarea>
+    <textarea ${interactionStyle !== 'readOnly' ? 'autofocus' : ''} id="notepad" name="notepad">${content}</textarea>
     <div class="command-strip">
       <div class="command-button hidden" id="viewer-count-indicator">
         <div id="viewer-count-number"></div>
@@ -61,7 +59,7 @@ module.exports = ({
       </div>
     </div>
     <script>
-      const Environment = ${JSON.stringify({readOnly, noteId, autofocus, createFromEdit})};
+      const Environment = ${JSON.stringify({interactionStyle, noteId})};
     </script>
     <script src="/application.js"></script>
   </body>
