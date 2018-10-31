@@ -13,6 +13,7 @@ module.exports = ({
   readOnly,
   noteId,
   autofocus = true,
+  createFromEdit = false,
   title = 'quick-pad'
 }) => `
 <!DOCTYPE html>
@@ -60,7 +61,7 @@ module.exports = ({
       </div>
     </div>
     <script>
-      const Environment = ${JSON.stringify({readOnly, noteId, autofocus})};
+      const Environment = ${JSON.stringify({readOnly, noteId, autofocus, createFromEdit})};
     </script>
     <script src="/application.js"></script>
   </body>

@@ -6,7 +6,7 @@ quick-pad:
 dead-simple collaborative notepad
 ---
 
-Click (+) to create a new note.
+Click (+) or edit this page to create a note.
 Send the link to share.
 
 Notes expire after 30 days of disuse.
@@ -34,6 +34,7 @@ function configureRoutes(app){
   app.get('/', function(request, response) {
     response.send(renderClient({
       content: homeScreenText,
+      createFromEdit: true,
       readOnly: true,
     }));
   });

@@ -25,3 +25,7 @@ export function debounce(func, wait, immediate) {
     if (callNow) func.apply(context, args);
   };
 };
+
+export function noteUrlToNoteID(url){
+  return url.split('/').slice(-2)[0];
+}
