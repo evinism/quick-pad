@@ -46,7 +46,7 @@ module.exports = ({
         </ul>
       </div>
     </div>
-    <textarea ${interactionStyle !== 'readOnly' ? 'autofocus' : ''} id="notepad" name="notepad">${content}</textarea>
+    <textarea ${interactionStyle !== 'readOnly' ? 'autofocus' : 'readonly'} id="notepad" name="notepad">${content}</textarea>
     <div class="command-strip">
       <div class="command-button hidden" id="viewer-count-indicator">
         <div id="viewer-count-number"></div>
