@@ -3,8 +3,9 @@ const path = require("path");
 module.exports = {
   entry: { main: "./src/client/assets/js" },
   output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: "main.js"
+    path: __dirname + "/build",
+    filename: "application.js",
+    publicPath: "/"
   },
   module: {
     rules: [
