@@ -1,22 +1,20 @@
+const path = require("path");
+
 module.exports = {
-  context: __dirname + "/src/client/assets/js",
-  entry: [ './index' ],
+  entry: { main: "./src/client/assets/js" },
   output: {
-    path: __dirname + "/build",
-    filename: "application.js",
-    publicPath: "/"
+    path: path.resolve(__dirname, "dist"),
+    filename: "main.js"
   },
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.js$/,
-        loader: 'babel-loader',
         exclude: /node_modules/,
-      },
-    ],
-  },
-  resolve: {
-    extensions: [ '.js' ]
-  },
-  devtool: 'source-map'
-}
+        use: {
+          loader: "babel-loader"
+        }
+      }
+    ]
+  }
+};
