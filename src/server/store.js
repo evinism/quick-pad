@@ -1,6 +1,6 @@
-const v4 = require('uuid/v4');
-const pg = require('pg');
-const pgescape = require('pg-escape');
+const v4 = require("uuid/v4");
+const pg = require("pg");
+const pgescape = require("pg-escape");
 
 /*
   TODO: find a better place for this
@@ -17,21 +17,19 @@ const pgescape = require('pg-escape');
 // pg initialize
 let client;
 
-function initDb(){
+function initDb() {
   return new Promise((resolve, reject) => {
-    if (process.env.DATABASE_USE_SSL === true) {
-      pg.defaults.ssl = true;
-    }
-    client = new pg.Client(process.env.DATABASE_URL);
-    client.connect(function(err, client) {
-      if (err) throw err;
-      console.log('client connected to postgres!');
-      resolve({success: true});
+    client = new pg.Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: true,
     });
-  })
+    client.connect(function (err, client) {
+      if (err) throw err;
+      console.log("client connected to postgres!");
+      resolve({ success: true });
+    });
+  });
 }
-
-
 
 /* Fake db store */
 const store = {};
@@ -44,7 +42,7 @@ function persist(id, content) {
       },
       (err, result) => {
         if (err) throw err;
-        resolve({success: true});
+        resolve({ success: true });
       }
     );
   });
@@ -83,16 +81,14 @@ function exists(id) {
 
 function destroy(id) {
   delete store[id];
-  return Promise((resolve, reject) => resolve(
-    {success: true}
-  ));
+  return Promise((resolve, reject) => resolve({ success: true }));
 }
 
 function create() {
   // TODO: make this retry infinitely until a new id is found.
   return new Promise((resolve, reject) => {
     let newId;
-    newId = v4().split('-')[0];
+    newId = v4().split("-")[0];
     console.log(`Creating note ${newId}`);
     client.query(
       {
@@ -110,39 +106,42 @@ function create() {
 // destroys notes that are greater than 30 days old;
 function destroyOldNotes() {
   return new Promise((resolve, reject) => {
-    console.log('Deleting old notes...');
+    console.log("Deleting old notes...");
     client.query(
       {
-        text: "DELETE FROM notes WHERE lastuse <= (now() - interval '30 days');"
+        text:
+          "DELETE FROM notes WHERE lastuse <= (now() - interval '30 days');",
       },
       (err) => {
         if (err) throw err;
-        console.log('Deleted!');
-        resolve({success: true});
+        console.log("Deleted!");
+        resolve({ success: true });
       }
     );
   });
 }
 
-function checkStatus(ids){
+function checkStatus(ids) {
   return new Promise((resolve, reject) => {
     client.query(
       {
-        text: `SELECT id, content FROM notes WHERE id IN (${ids.map(id => pgescape.literal(id)).join(', ')});`,
+        text: `SELECT id, content FROM notes WHERE id IN (${ids
+          .map((id) => pgescape.literal(id))
+          .join(", ")});`,
       },
       (err, queryResult) => {
         if (err) throw err;
-        const statuses = queryResult.rows.map(({id, content}) => {
-          let abbreviation = content.split('\n')[0];
+        const statuses = queryResult.rows.map(({ id, content }) => {
+          let abbreviation = content.split("\n")[0];
           // Lol this is shit:
-          const cutoff = 50
+          const cutoff = 50;
           if (abbreviation.length > cutoff) {
             abbreviation = abbreviation.slice(0, cutoff);
           }
-          return ({
+          return {
             id,
             abbreviation,
-          });
+          };
         });
         resolve(statuses);
       }
@@ -150,4 +149,13 @@ function checkStatus(ids){
   });
 }
 
-module.exports = {create, persist, recall, exists, checkStatus, destroy, initDb, destroyOldNotes};
+module.exports = {
+  create,
+  persist,
+  recall,
+  exists,
+  checkStatus,
+  destroy,
+  initDb,
+  destroyOldNotes,
+};
