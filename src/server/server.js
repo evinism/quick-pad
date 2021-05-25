@@ -9,7 +9,7 @@ const { initDb } = require("./store.js");
 const initCron = require("./fake_cron.js");
 
 /* main function */
-function run() {
+async function run() {
   console.log("quick-pad starting");
 
   // Main app!
@@ -25,7 +25,7 @@ function run() {
   app.use(express.static("build"));
 
   configureRoutes(app);
-  initDb();
+  await initDb();
 
   var server = http.createServer(app);
   initSockets(server);

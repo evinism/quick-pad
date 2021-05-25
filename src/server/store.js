@@ -17,7 +17,7 @@ const pgescape = require("pg-escape");
 // pg initialize
 let client;
 
-function initDb() {
+async function initDb() {
   let ssl = undefined;
   if (process.env.NODE_ENV === "production") {
     ssl = {
@@ -28,7 +28,7 @@ function initDb() {
     connectionString: process.env.DATABASE_URL,
     ssl,
   });
-  client.connect();
+  await client.connect();
 }
 
 function persist(id, content) {
