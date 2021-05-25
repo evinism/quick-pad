@@ -30,6 +30,7 @@ async function run() {
   var server = http.createServer(app);
   initSockets(server);
   server.listen(app.get("port"), function () {
+    initCron();
     console.log("Node app is running on port", app.get("port"));
   });
 }

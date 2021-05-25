@@ -31,26 +31,23 @@ async function initDb() {
   await client.connect();
 }
 
-function persist(id, content) {
-  return client
-    .query({
-      text: "UPDATE notes SET content = $2, lastuse = now() WHERE id = $1",
-      values: [id, content],
-    })
-    .then(() => {
-      return { success: true };
-    });
+async function persist(id, content) {
+  await client.query({
+    text: "UPDATE notes SET content = $2, lastuse = now() WHERE id = $1",
+    values: [id, content],
+  });
+  return { success: true };
 }
 
-function recall(id) {
-  return client
-    .query({
-      text: "SELECT content FROM notes WHERE id = $1",
-      values: [id],
-    })
-    .then((result) => {
-      return result.rows[0].content;
-    });
+async function recall(id) {
+  const result = await client.query({
+    text: "SELECT content FROM notes WHERE id = $1",
+    values: [id],
+  });
+
+  // tee off, but don't wait for query to complete
+  touch(id);
+  return result.rows[0].content;
 }
 
 async function exists(id) {
@@ -78,8 +75,16 @@ async function create() {
 function destroyOldNotes() {
   console.log("Deleting old notes...");
   return client.query(
-    "DELETE FROM notes WHERE lastuse <= (now() - interval '30 days');"
+    "DELETE FROM notes WHERE lastuse <= (now() - interval '365 days');"
   );
+}
+
+async function touch(id) {
+  await client.query({
+    text: "UPDATE notes SET lastuse = now() WHERE id = $1",
+    values: [id],
+  });
+  return { success: true };
 }
 
 async function checkStatus(ids) {
@@ -108,6 +113,7 @@ module.exports = {
   create,
   persist,
   recall,
+  touch,
   exists,
   checkStatus,
   initDb,

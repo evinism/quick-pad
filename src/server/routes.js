@@ -16,7 +16,7 @@ dead-simple collaborative notepad
 Click (+) or edit this page to create a note.
 Send the link to share.
 
-Notes expire after 30 days of disuse.
+Notes expire after 365 days of disuse.
 `;
 
 const noteNotFoundText = `
