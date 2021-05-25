@@ -21,7 +21,7 @@ async function initDb() {
   let ssl = undefined;
   if (process.env.NODE_ENV === "production") {
     ssl = {
-      rejectUnauthorized: true,
+      rejectUnauthorized: false,
     };
   }
   client = new Client({
