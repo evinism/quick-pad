@@ -18,9 +18,15 @@ const pgescape = require("pg-escape");
 let client;
 
 function initDb() {
+  let ssl = undefined;
+  if (process.env.NODE_ENV === "production") {
+    ssl = {
+      rejectUnauthorized: true,
+    };
+  }
   client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production",
+    ssl,
   });
   client.connect();
 }
