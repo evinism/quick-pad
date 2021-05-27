@@ -7,6 +7,7 @@ const configureRoutes = require("./routes.js");
 const initSockets = require("./socket.js");
 const { initDb } = require("./store.js");
 const initCron = require("./fake_cron.js");
+const Eta = require("eta");
 
 /* main function */
 async function run() {
@@ -23,6 +24,8 @@ async function run() {
   app.use(bodyParser.json());
   app.use(express.static("public"));
   app.use(express.static("build"));
+  Eta.config.views = "./src/client/templates";
+  Eta.config.cache = process.env.NODE_ENV === "production";
 
   configureRoutes(app);
   await initDb();
