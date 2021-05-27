@@ -1,6 +1,6 @@
-const { v4 } = require("uuid");
-const { Client } = require("pg");
-const pgescape = require("pg-escape");
+import { v4 } from "uuid";
+import pg from "pg";
+import pgescape from "pg-escape";
 
 /*
   TODO: find a better place for this
@@ -17,21 +17,21 @@ const pgescape = require("pg-escape");
 // pg initialize
 let client;
 
-async function initDb() {
+export async function initDb() {
   let ssl = undefined;
   if (process.env.NODE_ENV === "production") {
     ssl = {
       rejectUnauthorized: false,
     };
   }
-  client = new Client({
+  client = new pg.Client({
     connectionString: process.env.DATABASE_URL,
     ssl,
   });
   await client.connect();
 }
 
-async function persist(id, content) {
+export async function persist(id, content) {
   await client.query({
     text: "UPDATE notes SET content = $2, lastuse = now() WHERE id = $1",
     values: [id, content],
@@ -39,7 +39,7 @@ async function persist(id, content) {
   return { success: true };
 }
 
-async function recall(id) {
+export async function recall(id) {
   const result = await client.query({
     text: "SELECT content FROM notes WHERE id = $1",
     values: [id],
@@ -50,7 +50,7 @@ async function recall(id) {
   return result.rows[0].content;
 }
 
-async function exists(id) {
+export async function exists(id) {
   const query = {
     text: "select exists(select 1 from notes where id=$1)",
     values: [id],
@@ -59,7 +59,7 @@ async function exists(id) {
   return result.rows[0].exists;
 }
 
-async function create() {
+export async function create() {
   // TODO: make this retry infinitely until a new id is found.
   let newId;
   newId = v4().split("-")[0];
@@ -72,14 +72,14 @@ async function create() {
 }
 
 // destroys notes that are greater than 30 days old;
-function destroyOldNotes() {
+export function destroyOldNotes() {
   console.log("Deleting old notes...");
   return client.query(
     "DELETE FROM notes WHERE lastuse <= (now() - interval '365 days');"
   );
 }
 
-async function touch(id) {
+export async function touch(id) {
   await client.query({
     text: "UPDATE notes SET lastuse = now() WHERE id = $1",
     values: [id],
@@ -87,7 +87,7 @@ async function touch(id) {
   return { success: true };
 }
 
-async function checkStatus(ids) {
+export async function checkStatus(ids) {
   const query = {
     text: `SELECT id, content FROM notes WHERE id IN (${ids
       .map((id) => pgescape.literal(id))
@@ -109,7 +109,7 @@ async function checkStatus(ids) {
   return statuses;
 }
 
-module.exports = {
+export default {
   create,
   persist,
   recall,

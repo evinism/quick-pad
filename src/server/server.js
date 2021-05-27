@@ -1,17 +1,18 @@
-require("dotenv").config();
-const http = require("http");
-const express = require("express");
-var enforce = require("express-sslify");
-const Eta = require("eta");
-const morgan = require("morgan");
+import dotenv from "dotenv";
+import http from "http";
+import express from "express";
+import enforce from "express-sslify";
+import { config as etaConfig } from "eta";
+import morgan from "morgan";
 
-const configureRoutes = require("./routes.js");
-const initSockets = require("./socket.js");
-const { initDb } = require("./store.js");
-const initCron = require("./fake_cron.js");
+import configureRoutes from "./routes.js";
+import initSockets from "./socket.js";
+import { initDb } from "./store.js";
+import initCron from "./fake_cron.js";
 
 /* main function */
 async function run() {
+  dotenv.config();
   console.log("quick-pad starting");
 
   // Main app!
@@ -26,8 +27,8 @@ async function run() {
   app.use(express.json());
   app.use(express.static("public"));
   app.use(express.static("build"));
-  Eta.config.views = "./src/client/templates";
-  Eta.config.cache = process.env.NODE_ENV === "production";
+  etaConfig.views = "./src/client/templates";
+  etaConfig.cache = process.env.NODE_ENV === "production";
 
   configureRoutes(app);
   await initDb();
@@ -40,4 +41,4 @@ async function run() {
   });
 }
 
-module.exports = run;
+export default run;

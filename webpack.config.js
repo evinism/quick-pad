@@ -1,11 +1,9 @@
-const path = require("path");
-
-module.exports = {
+export default {
   entry: { main: "./src/client/assets/js" },
   output: {
-    path: __dirname + "/build",
+    path: process.cwd() + "/build",
     filename: "application.js",
-    publicPath: "/"
+    publicPath: "/",
   },
   module: {
     rules: [
@@ -13,9 +11,9 @@ module.exports = {
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
-          loader: "babel-loader"
-        }
-      }
-    ]
-  }
+          loader: "babel-loader",
+        },
+      },
+    ],
+  },
 };

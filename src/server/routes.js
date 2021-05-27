@@ -1,5 +1,5 @@
-const Eta = require("eta");
-const { create, persist, recall, exists, checkStatus } = require("./store.js");
+import { renderFile } from "eta";
+import { create, persist, recall, exists, checkStatus } from "./store.js";
 
 const renderClient = (config) => {
   const {
@@ -8,7 +8,7 @@ const renderClient = (config) => {
     noteId,
     title = "quick-pad",
   } = config;
-  return Eta.renderFile("./main.eta", {
+  return renderFile("./main.eta", {
     content,
     title,
     env: JSON.stringify({ interactionStyle, noteId }),
@@ -119,4 +119,4 @@ function configureRoutes(app) {
   });
 }
 
-module.exports = configureRoutes;
+export default configureRoutes;
