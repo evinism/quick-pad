@@ -1,7 +1,6 @@
 require("dotenv").config();
 const http = require("http");
 const express = require("express");
-const bodyParser = require("body-parser");
 var enforce = require("express-sslify");
 const Eta = require("eta");
 const morgan = require("morgan");
@@ -24,7 +23,7 @@ async function run() {
     app.use(enforce.HTTPS({ trustProtoHeader: true }));
   }
 
-  app.use(bodyParser.json());
+  app.use(express.json());
   app.use(express.static("public"));
   app.use(express.static("build"));
   Eta.config.views = "./src/client/templates";
