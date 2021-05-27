@@ -1,12 +1,21 @@
-const {
-  create,
-  persist,
-  recall,
-  exists,
-  destroy,
-  checkStatus,
-} = require("./store.js");
-const renderClient = require("../client");
+const Eta = require("eta");
+const { create, persist, recall, exists, checkStatus } = require("./store.js");
+
+const renderClient = (config) => {
+  const {
+    interactionStyle = "readOnly",
+    content,
+    noteId,
+    title = "quick-pad",
+  } = config;
+  return Eta.renderFile("./main.eta", {
+    content,
+    title,
+    env: JSON.stringify({ interactionStyle, noteId }),
+    interactionStyle:
+      interactionStyle !== "readOnly" ? "autofocus" : "readonly",
+  });
+};
 
 const homeScreenText = `
 quick-pad:
@@ -37,7 +46,7 @@ Oops! Nothing exists here.
 // TODO: use promises a little better than I'm doing right now
 function configureRoutes(app) {
   // root is read-only info page
-  app.get("/", async function (request, response) {
+  app.get("/", async function (_, response) {
     response.send(
       await renderClient({
         content: homeScreenText,
@@ -47,8 +56,9 @@ function configureRoutes(app) {
   });
 
   // new will redirect to the properly
-  app.get("/new/", function (request, response) {
-    create().then((newId) => response.redirect(`/note/${newId}/`));
+  app.get("/new/", async function (_, response) {
+    const newId = await create();
+    response.redirect(`/note/${newId}/`);
   });
 
   app.get("/note/:id/", async function (request, response) {
@@ -73,14 +83,12 @@ function configureRoutes(app) {
     );
   });
 
-  app.post("/note/:id/", function (request, response) {
-    const id = request.params.id;
-    persist(id, request.body.content || "").then(() =>
-      response.status(200).json({ success: true })
-    );
+  app.post("/note/:id/", async function (request, response) {
+    await persist(request.params.id, request.body.content || "");
+    response.status(200).json({ success: true });
   });
 
-  app.post("/statusCheck", function (request, response) {
+  app.post("/statusCheck", async function (request, response) {
     const ids = request.body.ids;
     if (!Array.isArray(ids)) {
       response.status(400).json({ success: false });
@@ -97,10 +105,11 @@ function configureRoutes(app) {
       response.status(200).json([]);
       return;
     }
-    checkStatus(ids).then((statuses) => response.status(200).json(statuses));
+    const statuses = await checkStatus(ids);
+    response.status(200).json(statuses);
   });
 
-  app.get("*", async function (request, response) {
+  app.get("*", async function (_, response) {
     response.status(404).send(
       await renderClient({
         content: pageNotFoundText,
