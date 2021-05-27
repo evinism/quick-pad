@@ -3,11 +3,13 @@ const http = require("http");
 const express = require("express");
 const bodyParser = require("body-parser");
 var enforce = require("express-sslify");
+const Eta = require("eta");
+const morgan = require("morgan");
+
 const configureRoutes = require("./routes.js");
 const initSockets = require("./socket.js");
 const { initDb } = require("./store.js");
 const initCron = require("./fake_cron.js");
-const Eta = require("eta");
 
 /* main function */
 async function run() {
@@ -15,6 +17,7 @@ async function run() {
 
   // Main app!
   var app = express();
+  app.use(morgan("common"));
   app.set("port", process.env.PORT || 8080);
 
   if (process.env.NODE_ENV === "production") {
