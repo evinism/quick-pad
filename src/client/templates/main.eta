@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Twitter Card data -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="quick-pad">
+    <meta name="twitter:description" content="Dead simple collaborative notepad">
+    <meta name="twitter:site" content="@evinism">
+    <meta name="twitter:image" content="https://www.quick-pad.org/note_example.png">
+
+    <!-- Open Graph data -->
+    <meta property="og:title" content="quick-pad" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.quick-pad.org/" />
+    <meta property="og:image" content="https://www.quick-pad.org/note_example.png" />
+    <meta property="og:description" content="Dead simple collaborative notepad" />
+    <title><%= it.title %></title>
+    <style>
+      <%~ includeFile('../assets/application.css') %>
+    </style>
+  </head>
+  <body>
+    <div id="note-list-wrapper" class="hidden">
+      <div>
+        <h2>recent notes <br>--- </h2>
+        <ul id="note-list">
+        </ul>
+      </div>
+    </div>
+    <textarea <%= it.interactionStyle %> id="notepad" name="notepad"><%= it.content %></textarea>
+    <div class="command-strip">
+      <div class="command-button hidden" id="viewer-count-indicator">
+        <div id="viewer-count-number"></div>
+      </div>
+      <a class="command-button hoverable" id="new-note" href="/new/" target="_blank">
+        <%~ includeFile('../assets/svg/plus.svg') %>
+      </a>
+      <div class="command-button hoverable" id="list-toggler">
+        <%~ includeFile('../assets/svg/list.svg') %>
+      </div>
+    </div>
+    <script>
+      const Environment = <%~ it.env %>;
+    </script>
+    <script src="/application.js"></script>
+  </body>
+</html>
