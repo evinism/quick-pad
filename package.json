@@ -2,13 +2,14 @@
   "name": "quick-pad",
   "version": "0.2.0",
   "description": "a quick notepad",
-  "main": "index.js",
+  "main": "bin/start",
+  "type": "module",
   "engines": {
     "node": "16.2.0"
   },
   "scripts": {
-    "start": "webpack && node scripts/start.js",
-    "server": "node scripts/start.js",
+    "start": "webpack && node bin/start.js",
+    "server": "node bin/start.js",
     "watch": "webpack --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

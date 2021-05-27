@@ -1,7 +1,7 @@
-const { destroyOldNotes } = require("./store.js");
+import { destroyOldNotes } from "./store.js";
 
 function initCron() {
   setInterval(destroyOldNotes, 1000 * 60 * 60 * 24); // 1 day
 }
 
-module.exports = initCron;
+export default initCron;

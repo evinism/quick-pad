@@ -1,8 +1,8 @@
-const socketio = require("socket.io");
-const { persist } = require("./store.js");
+import { Server } from "socket.io";
+import { persist } from "./store.js";
 
 function initSockets(server) {
-  const io = socketio(server);
+  const io = new Server(server);
 
   let clientsOnIds = {};
 
@@ -98,4 +98,4 @@ function initSockets(server) {
   return io;
 }
 
-module.exports = initSockets;
+export default initSockets;
