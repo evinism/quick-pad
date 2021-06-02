@@ -43,3 +43,4 @@ jspm_packages
 build/
 dist/
 feassets/
+public/build/
