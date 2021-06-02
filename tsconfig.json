@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "rootDir": "./src",
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "strict": false,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src/**/*", "bin/**/*"]
+}

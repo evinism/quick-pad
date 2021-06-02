@@ -1,7 +1,7 @@
-export default {
-  entry: { main: "./src/client/assets/js" },
+module.exports = {
+  entry: { main: "./build/client/assets/js/application" },
   output: {
-    path: process.cwd() + "/build",
+    path: process.cwd() + "/public/build",
     filename: "application.js",
     publicPath: "/",
   },

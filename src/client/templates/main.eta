@@ -45,6 +45,6 @@
     <script>
       const Environment = <%~ it.env %>;
     </script>
-    <script src="/application.js"></script>
+    <script src="/build/application.js"></script>
   </body>
 </html>

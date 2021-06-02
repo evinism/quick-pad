@@ -11,7 +11,7 @@ export function throttle(callback, limit) {
   };
 }
 
-export function debounce(func, wait, immediate) {
+export function debounce(func, wait, immediate = false) {
   var timeout;
   return function () {
     var context = this,
