@@ -26,7 +26,6 @@ async function run() {
 
   app.use(express.json());
   app.use(express.static("public"));
-  app.use(express.static("build"));
   etaConfig.views = "./src/client/templates";
   etaConfig.cache = process.env.NODE_ENV === "production";
 

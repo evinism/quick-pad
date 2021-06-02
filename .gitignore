@@ -42,3 +42,4 @@ jspm_packages
 # buildfile.
 build/
 dist/
+feassets/

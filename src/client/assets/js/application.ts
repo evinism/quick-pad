@@ -5,6 +5,8 @@ import {
   noteUrlToNoteID,
   enableTabsOnTextArea,
 } from "./util.js";
+
+declare const Environment: any;
 const { interactionStyle, noteId: pageLoadNoteId } = Environment;
 
 const area = document.querySelector("textarea");
@@ -32,7 +34,7 @@ enableTabsOnTextArea(area);
     };
     fetch("/statusCheck", fetchParams)
       .catch(() => {})
-      .then((response) => response.json())
+      .then((response) => response && response.json())
       .then(renderAndPersist);
   } else {
     renderAndPersist([]);
@@ -168,7 +170,7 @@ function hookIntoNoteChanges(noteId) {
 if (interactionStyle === "editable") {
   hookIntoNoteChanges(pageLoadNoteId);
 } else if (interactionStyle === "createOnEdit") {
-  function enableEdit() {
+  const enableEdit = function () {
     fetch("new").then((response) => {
       const newNoteId = noteUrlToNoteID(response.url);
       // on creation, append this note to start of local notes
@@ -186,6 +188,6 @@ if (interactionStyle === "editable") {
       hookIntoNoteChanges(newNoteId);
     });
     area.removeEventListener("input", enableEdit);
-  }
+  };
   area.addEventListener("input", enableEdit);
 }

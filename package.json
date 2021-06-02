@@ -2,15 +2,14 @@
   "name": "quick-pad",
   "version": "0.2.0",
   "description": "a quick notepad",
-  "main": "bin/start",
-  "type": "module",
+  "main": "src/start.ts",
   "engines": {
     "node": "16.2.0"
   },
   "scripts": {
-    "start": "webpack && node bin/start.js",
+    "start": "npm run build && node build/start.js",
     "server": "node bin/start.js",
-    "watch": "webpack --watch",
+    "build": "tsc && webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -39,6 +38,7 @@
     "pg-escape": "^0.2.0",
     "socket.io": "^4.1.2",
     "socket.io-client": "^4.1.2",
+    "typescript": "^4.3.2",
     "uuid": "^8.3.2",
     "webpack": "^5.37.1",
     "webpack-cli": "^4.7.0",
