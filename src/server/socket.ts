@@ -1,29 +1,32 @@
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
+import { Server as HTTPServer } from "http";
 import { persist } from "./store.js";
 
-function initSockets(server) {
+type Message = Object;
+
+function initSockets(server: HTTPServer) {
   const io = new Server(server);
 
-  let clientsOnIds = {};
+  let clientsOnIds: { [key: string]: Socket[] } = {};
 
   // fix duplication.
-  function broadcastForId(message, id, origin) {
-    const currentClients = clientsOnIds[id] || [];
+  function broadcastForId(message: Message, id: string, origin: Socket) {
+    const currentClients: Socket[] = clientsOnIds[id] || [];
     currentClients
       .filter((socket) => socket !== origin)
       .forEach((socket) => socket.send(message));
   }
 
-  function broadcastForAllInId(message, id) {
+  function broadcastForAllInId(message: Message, id: string) {
     const currentClients = clientsOnIds[id] || [];
     currentClients.forEach((socket) => socket.send(message));
   }
 
-  function numClientsForId(id) {
+  function numClientsForId(id: string) {
     return (clientsOnIds[id] || []).length;
   }
 
-  function registerClientForId(ws, id) {
+  function registerClientForId(ws: Socket, id: string) {
     const currentClients = clientsOnIds[id] || [];
     currentClients.push(ws);
     clientsOnIds[id] = currentClients;
@@ -35,7 +38,7 @@ function initSockets(server) {
     );
   }
 
-  function deregisterClientForId(ws, id) {
+  function deregisterClientForId(ws: Socket, id: string) {
     const currentClients = clientsOnIds[id];
     const idx = currentClients.indexOf(ws);
     currentClients.splice(idx, 1);
@@ -48,8 +51,8 @@ function initSockets(server) {
     );
   }
 
-  io.on("connection", function (ws) {
-    let id;
+  io.on("connection", function (ws: Socket) {
+    let id: string | undefined;
     ws.on("disconnect", () => {
       if (id) {
         deregisterClientForId(ws, id);

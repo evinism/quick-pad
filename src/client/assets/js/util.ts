@@ -1,8 +1,9 @@
-export function throttle(callback, limit) {
+export function throttle<A extends Function, B>(callback: A, limit: number) {
   var wait = false;
-  return function () {
+  return function (this: B) {
+    var context = this;
     if (!wait) {
-      callback.call();
+      callback.call(context);
       wait = true;
       setTimeout(function () {
         wait = false;
@@ -11,9 +12,13 @@ export function throttle(callback, limit) {
   };
 }
 
-export function debounce(func, wait, immediate = false) {
-  var timeout;
-  return function () {
+export function debounce<A extends Function, B>(
+  func: A,
+  wait: number,
+  immediate = false
+) {
+  var timeout: NodeJS.Timeout | null;
+  return function (this: B) {
     var context = this,
       args = arguments;
     var later = function () {
@@ -21,17 +26,17 @@ export function debounce(func, wait, immediate = false) {
       if (!immediate) func.apply(context, args);
     };
     var callNow = immediate && !timeout;
-    clearTimeout(timeout);
+    timeout && clearTimeout(timeout);
     timeout = setTimeout(later, wait);
     if (callNow) func.apply(context, args);
   };
 }
 
-export function noteUrlToNoteID(url) {
+export function noteUrlToNoteID(url: string) {
   return url.split("/").slice(-2)[0];
 }
 
-export function enableTabsOnTextArea(area) {
+export function enableTabsOnTextArea(area: HTMLTextAreaElement) {
   area.addEventListener("keydown", function (e) {
     if (e.keyCode == 9 || e.which == 9) {
       e.preventDefault();

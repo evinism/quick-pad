@@ -6,21 +6,31 @@ import {
   enableTabsOnTextArea,
 } from "./util.js";
 
+type Message =
+  | {
+      type: "replace";
+      content: string;
+    }
+  | {
+      type: "viewerCount";
+      content: number;
+    };
+
 declare const Environment: any;
 const { interactionStyle, noteId: pageLoadNoteId } = Environment;
 
 const area = document.querySelector("textarea");
 
-enableTabsOnTextArea(area);
+enableTabsOnTextArea(area!);
 
 /* recent notes through localStorage */
 (function initRecentNotes() {
   const recentNotes = JSON.parse(localStorage.getItem("notes") || "[]").filter(
-    (record) => pageLoadNoteId !== record
+    (record: string) => pageLoadNoteId !== record
   );
 
   const displayedRecentNotes = recentNotes.filter(
-    (record) => pageLoadNoteId !== record
+    (record: string) => pageLoadNoteId !== record
   );
   if (displayedRecentNotes.length > 0) {
     // do a quick status update on all
@@ -40,7 +50,7 @@ enableTabsOnTextArea(area);
     renderAndPersist([]);
   }
 
-  function renderAndPersist(statuses) {
+  function renderAndPersist(statuses: any[]) {
     statuses = statuses.sort(
       (a, b) => recentNotes.indexOf(a.id) - recentNotes.indexOf(b.id)
     );
@@ -51,7 +61,7 @@ enableTabsOnTextArea(area);
           `<li><a href="/note/${id}/">${abbreviation || "[no title]"}</a></li>`
       )
       .reduce((a, b) => a + b, "");
-    document.getElementById("note-list").innerHTML = listHtml;
+    document.getElementById("note-list")!.innerHTML = listHtml;
 
     // and persist the notes that remain.
     const remainingIds = statuses.map((status) => status.id);
@@ -63,43 +73,49 @@ enableTabsOnTextArea(area);
 })();
 
 /* Stupid state management soln: */
-let state;
-function setState(newState) {
+interface ClientState {
+  sidebarShown: boolean;
+  viewerCount: number;
+}
+
+let state: ClientState = {
+  sidebarShown: false,
+  viewerCount: 0,
+};
+
+function setState(newState: Partial<ClientState>) {
   state = Object.assign({}, state, newState);
   render(state);
 }
 
 // state => [proper view for state]
-function render(stateToRender) {
+function render(stateToRender: ClientState) {
   // sidebar stuff
   const listElem = document.getElementById("note-list-wrapper");
   const togglerElem = document.getElementById("note-list-wrapper");
   if (stateToRender.sidebarShown) {
-    listElem.classList.remove("hidden");
-    togglerElem.classList.add("active");
+    listElem!.classList.remove("hidden");
+    togglerElem!.classList.add("active");
   } else {
-    listElem.classList.add("hidden");
-    togglerElem.classList.remove("active");
+    listElem!.classList.add("hidden");
+    togglerElem!.classList.remove("active");
   }
 
   // view counter stuff
   const viewerElem = document.getElementById("viewer-count-indicator");
   if (stateToRender.viewerCount > 1) {
-    viewerElem.classList.remove("hidden");
+    viewerElem!.classList.remove("hidden");
   } else {
-    viewerElem.classList.add("hidden");
+    viewerElem!.classList.add("hidden");
   }
   const viewNumberElem = document.getElementById("viewer-count-number");
-  viewNumberElem.innerHTML = stateToRender.viewerCount + " viewing";
+  viewNumberElem!.innerHTML = stateToRender.viewerCount + " viewing";
 }
 
 // Initial state
-setState({
-  sidebarShown: false,
-  viewerCount: 0,
-});
+setState(state);
 
-document.getElementById("list-toggler").addEventListener(
+document.getElementById("list-toggler")!.addEventListener(
   "click",
   function toggleSidebar() {
     setState({ sidebarShown: !state.sidebarShown });
@@ -108,13 +124,13 @@ document.getElementById("list-toggler").addEventListener(
 );
 
 // Nonstatic page junk
-function hookIntoNoteChanges(noteId) {
+function hookIntoNoteChanges(noteId: string) {
   /* saving logic */
   let save;
-  let throttledSave;
-  let debouncedSave;
+  let throttledSave: any;
+  let debouncedSave: any;
 
-  function attachSocketToApp(socket) {
+  function attachSocketToApp(socket: any) {
     socket.on("connect", () => {
       socket.send({
         type: "register",
@@ -122,20 +138,19 @@ function hookIntoNoteChanges(noteId) {
       });
     });
 
-    socket.on("message", (message) => {
-      const { type, content } = message;
-      switch (type) {
+    socket.on("message", (message: Message) => {
+      switch (message.type) {
         case "replace":
           // TODO: move area.value to state tree.
-          area.value = content;
+          area!.value = message.content;
           break;
         case "viewerCount":
           setState({
-            viewerCount: content,
+            viewerCount: message.content,
           });
           break;
         default:
-          console.warn(`Unknown message type ${type}`);
+          console.warn(`Unknown message type ${(message as any).type}`);
       }
     });
 
@@ -143,7 +158,7 @@ function hookIntoNoteChanges(noteId) {
       socket.send({
         type: "update",
         id: noteId,
-        content: area.value,
+        content: area!.value,
       });
     };
 
@@ -157,7 +172,7 @@ function hookIntoNoteChanges(noteId) {
   attachSocketToApp(ws);
 
   // Event listeners
-  area.addEventListener(
+  area!.addEventListener(
     "input",
     function () {
       throttledSave();
@@ -187,7 +202,7 @@ if (interactionStyle === "editable") {
       );
       hookIntoNoteChanges(newNoteId);
     });
-    area.removeEventListener("input", enableEdit);
+    area!.removeEventListener("input", enableEdit);
   };
-  area.addEventListener("input", enableEdit);
+  area!.addEventListener("input", enableEdit);
 }

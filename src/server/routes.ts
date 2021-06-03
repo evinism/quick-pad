@@ -1,7 +1,15 @@
 import { renderFile } from "eta";
+import { Express } from "express";
 import { create, persist, recall, exists, checkStatus } from "./store.js";
 
-const renderClient = (config) => {
+interface RenderClientConfig {
+  interactionStyle?: "readOnly" | "createOnEdit" | "editable";
+  content?: string;
+  noteId?: string;
+  title?: string;
+}
+
+const renderClient = (config: RenderClientConfig) => {
   const {
     interactionStyle = "readOnly",
     content,
@@ -44,7 +52,7 @@ Oops! Nothing exists here.
 `;
 
 // TODO: use promises a little better than I'm doing right now
-function configureRoutes(app) {
+function configureRoutes(app: Express) {
   // root is read-only info page
   app.get("/", async function (_, response) {
     response.send(
