@@ -7,7 +7,6 @@ import morgan from "morgan";
 
 import configureRoutes from "./routes.js";
 import initSockets from "./socket.js";
-import { initDb } from "./store.js";
 import initCron from "./fake_cron.js";
 
 /* main function */
@@ -30,7 +29,6 @@ async function run() {
   etaConfig.cache = process.env.NODE_ENV === "production";
 
   configureRoutes(app);
-  await initDb();
 
   var server = http.createServer(app);
   initSockets(server);

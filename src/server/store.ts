@@ -1,6 +1,5 @@
 import { v4 } from "uuid";
-import pg from "pg";
-import pgescape from "pg-escape";
+import { PrismaClient } from "@prisma/client";
 
 /*
   TODO: find a better place for this
@@ -13,59 +12,43 @@ import pgescape from "pg-escape";
   );
 */
 
-// TODO: pool clients
-// pg initialize
-let client: pg.Client;
-
-export async function initDb() {
-  let ssl = undefined;
-  if (process.env.NODE_ENV === "production") {
-    ssl = {
-      rejectUnauthorized: false,
-    };
-  }
-  client = new pg.Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl,
-  });
-  await client.connect();
-}
+let prisma = new PrismaClient();
 
 export async function persist(id: string, content: string) {
-  await client.query({
-    text: "UPDATE notes SET content = $2, lastuse = now() WHERE id = $1",
-    values: [id, content],
+  await prisma.notes.update({
+    where: { id },
+    data: {
+      lastuse: new Date(),
+      content,
+    },
   });
   return { success: true };
 }
 
 export async function recall(id: string) {
-  const result = await client.query({
-    text: "SELECT content FROM notes WHERE id = $1",
-    values: [id],
-  });
+  const result = await prisma.notes.findUnique({ where: { id } });
 
   // tee off, but don't wait for query to complete
-  touch(id);
-  return result.rows[0].content;
+  if (result) {
+    touch(id);
+  }
+  return result?.content;
 }
 
 export async function exists(id: string) {
-  const query = {
-    text: "select exists(select 1 from notes where id=$1)",
-    values: [id],
-  };
-  const result = await client.query(query);
-  return result.rows[0].exists;
+  return !!(await prisma.notes.findUnique({ where: { id } }));
 }
 
 export async function create() {
   // TODO: make this retry infinitely until a new id is found.
   let newId = v4().split("-")[0];
   console.log(`Creating note ${newId}`);
-  await client.query({
-    text: "INSERT INTO notes VALUES ($1, now(), '');", // TODO: move empty string default in postgres, not here
-    values: [newId],
+  await prisma.notes.create({
+    data: {
+      id: newId,
+      lastuse: new Date(),
+      content: "",
+    },
   });
   return newId;
 }
@@ -73,27 +56,30 @@ export async function create() {
 // destroys notes that are greater than 30 days old;
 export function destroyOldNotes() {
   console.log("Deleting old notes...");
-  return client.query(
+  return prisma.$queryRaw(
     "DELETE FROM notes WHERE lastuse <= (now() - interval '365 days');"
   );
 }
 
 export async function touch(id: string) {
-  await client.query({
-    text: "UPDATE notes SET lastuse = now() WHERE id = $1",
-    values: [id],
+  await prisma.notes.update({
+    where: { id },
+    data: {
+      lastuse: new Date(),
+    },
   });
   return { success: true };
 }
 
 export async function checkStatus(ids: string[]) {
-  const query = {
-    text: `SELECT id, content FROM notes WHERE id IN (${ids
-      .map((id) => pgescape.literal(id))
-      .join(", ")});`,
-  };
-  const queryResult = await client.query(query);
-  const statuses = queryResult.rows.map(({ id, content }) => {
+  const notes = await prisma.notes.findMany({
+    where: {
+      id: {
+        in: ids,
+      },
+    },
+  });
+  const statuses = notes.map(({ id, content }) => {
     let abbreviation = content.split("\n")[0];
     // Lol this is shit:
     const cutoff = 50;
@@ -115,6 +101,5 @@ export default {
   touch,
   exists,
   checkStatus,
-  initDb,
   destroyOldNotes,
 };

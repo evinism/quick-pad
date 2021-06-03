@@ -1,6 +1,6 @@
 import { renderFile } from "eta";
 import { Express } from "express";
-import { create, persist, recall, exists, checkStatus } from "./store.js";
+import { create, persist, recall, checkStatus } from "./store.js";
 
 interface RenderClientConfig {
   interactionStyle?: "readOnly" | "createOnEdit" | "editable";
@@ -71,8 +71,17 @@ function configureRoutes(app: Express) {
 
   app.get("/note/:id/", async function (request, response) {
     const id = request.params.id;
-    const doesExist = await exists(id);
-    if (!doesExist) {
+    const content = await recall(id);
+    if (typeof content === "string") {
+      response.send(
+        await renderClient({
+          content: content,
+          title: "quick-pad: note",
+          noteId: id,
+          interactionStyle: "editable",
+        })
+      );
+    } else {
       response.status(404).send(
         await renderClient({
           content: noteNotFoundText,
@@ -80,15 +89,6 @@ function configureRoutes(app: Express) {
         })
       );
     }
-    const content = await recall(id);
-    response.send(
-      await renderClient({
-        content: content,
-        title: "quick-pad: note",
-        noteId: id,
-        interactionStyle: "editable",
-      })
-    );
   });
 
   app.post("/note/:id/", async function (request, response) {
