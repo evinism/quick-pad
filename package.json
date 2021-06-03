@@ -9,6 +9,8 @@
   "scripts": {
     "start": "node build/start.js",
     "build": "prisma generate && tsc && webpack",
+    "heroku-postbuild": "npm run build && npm run migrate",
+    "migrate": "prisma migrate deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
