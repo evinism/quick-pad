@@ -15,7 +15,7 @@ import pgescape from "pg-escape";
 
 // TODO: pool clients
 // pg initialize
-let client;
+let client: pg.Client;
 
 export async function initDb() {
   let ssl = undefined;
@@ -31,7 +31,7 @@ export async function initDb() {
   await client.connect();
 }
 
-export async function persist(id, content) {
+export async function persist(id: string, content: string) {
   await client.query({
     text: "UPDATE notes SET content = $2, lastuse = now() WHERE id = $1",
     values: [id, content],
@@ -39,7 +39,7 @@ export async function persist(id, content) {
   return { success: true };
 }
 
-export async function recall(id) {
+export async function recall(id: string) {
   const result = await client.query({
     text: "SELECT content FROM notes WHERE id = $1",
     values: [id],
@@ -50,7 +50,7 @@ export async function recall(id) {
   return result.rows[0].content;
 }
 
-export async function exists(id) {
+export async function exists(id: string) {
   const query = {
     text: "select exists(select 1 from notes where id=$1)",
     values: [id],
@@ -61,8 +61,7 @@ export async function exists(id) {
 
 export async function create() {
   // TODO: make this retry infinitely until a new id is found.
-  let newId;
-  newId = v4().split("-")[0];
+  let newId = v4().split("-")[0];
   console.log(`Creating note ${newId}`);
   await client.query({
     text: "INSERT INTO notes VALUES ($1, now(), '');", // TODO: move empty string default in postgres, not here
@@ -79,7 +78,7 @@ export function destroyOldNotes() {
   );
 }
 
-export async function touch(id) {
+export async function touch(id: string) {
   await client.query({
     text: "UPDATE notes SET lastuse = now() WHERE id = $1",
     values: [id],
@@ -87,7 +86,7 @@ export async function touch(id) {
   return { success: true };
 }
 
-export async function checkStatus(ids) {
+export async function checkStatus(ids: string[]) {
   const query = {
     text: `SELECT id, content FROM notes WHERE id IN (${ids
       .map((id) => pgescape.literal(id))
