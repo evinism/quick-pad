@@ -43,6 +43,7 @@
     "morgan": "^1.10.0",
     "pg": "^8.6.0",
     "pg-escape": "^0.2.0",
+    "prisma": "^2.24.0",
     "socket.io": "^4.1.2",
     "socket.io-client": "^4.1.2",
     "typescript": "^4.3.2",
@@ -52,7 +53,6 @@
     "ws": "^7.4.5"
   },
   "devDependencies": {
-    "prisma": "^2.24.0",
     "webpack-dev-server": "^3.11.2",
     "webpack-node-externals": "^3.0.0"
   }
