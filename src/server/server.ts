@@ -1,9 +1,14 @@
 import dotenv from "dotenv";
+dotenv.config();
+
 import http from "http";
 import express from "express";
 import enforce from "express-sslify";
 import { config as etaConfig } from "eta";
 import morgan from "morgan";
+import session from "express-session";
+import passport from "passport";
+import "./passportconfig";
 
 import configureRoutes from "./routes.js";
 import initSockets from "./socket.js";
@@ -11,7 +16,6 @@ import initCron from "./fake_cron.js";
 
 /* main function */
 async function run() {
-  dotenv.config();
   console.log("quick-pad starting");
 
   // Main app!
@@ -24,6 +28,16 @@ async function run() {
   }
 
   app.use(express.json());
+
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "bogus",
+      cookie: {},
+    })
+  );
+  app.use(passport.initialize());
+  app.use(passport.session());
+
   app.use(express.static("public"));
   etaConfig.views = "./src/client/templates";
   etaConfig.cache = process.env.NODE_ENV === "production";

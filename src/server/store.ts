@@ -1,18 +1,7 @@
 import { v4 } from "uuid";
 import { PrismaClient } from "@prisma/client";
 
-/*
-  TODO: find a better place for this
-  pg table init command (this is totally the right way to do things like this):
-  // ---
-  CREATE TABLE notes (
-    id varchar(8) PRIMARY KEY,
-    lastuse timestamp NOT NULL,
-    content text NOT NULL
-  );
-*/
-
-let prisma = new PrismaClient();
+export const prisma = new PrismaClient();
 
 export async function persist(id: string, content: string) {
   await prisma.notes.update({
@@ -95,6 +84,7 @@ export async function checkStatus(ids: string[]) {
 }
 
 export default {
+  prisma,
   create,
   persist,
   recall,
