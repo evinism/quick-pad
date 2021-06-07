@@ -1,6 +1,13 @@
 import { renderFile } from "eta";
-import { Express } from "express";
-import { create, persist, recall, checkStatus } from "./store.js";
+import express, { Express } from "express";
+import passport from "passport";
+import { create, persist, recall, checkStatus } from "./store";
+import {
+  homeScreenText,
+  pageNotFoundText,
+  noteNotFoundText,
+  failedLoginText,
+} from "./copy";
 
 interface RenderClientConfig {
   interactionStyle?: "readOnly" | "createOnEdit" | "editable";
@@ -9,54 +16,31 @@ interface RenderClientConfig {
   title?: string;
 }
 
-const renderClient = (config: RenderClientConfig) => {
-  const {
-    interactionStyle = "readOnly",
-    content,
-    noteId,
-    title = "quick-pad",
-  } = config;
-  return renderFile("./main.eta", {
-    content,
-    title,
-    env: JSON.stringify({ interactionStyle, noteId }),
-    interactionStyle:
-      interactionStyle !== "readOnly" ? "autofocus" : "readonly",
-  });
-};
-
-const homeScreenText = `
-quick-pad:
-dead-simple collaborative notepad
----
-
-Click (+) or edit this page to create a note.
-Send the link to share.
-
-Notes expire after 365 days of disuse.
-`;
-
-const noteNotFoundText = `
-404: Note not found
----
-
-The note at this address either has not been created or has been deleted.
-Click (+) to create a new note.
-`;
-
-const pageNotFoundText = `
-404: page not found
----
-
-Oops! Nothing exists here.
-`;
+const renderClient =
+  (request: express.Request) => (config: RenderClientConfig) => {
+    const {
+      interactionStyle = "readOnly",
+      content,
+      noteId,
+      title = "quick-pad",
+    } = config;
+    const user = request.user;
+    return renderFile("./main.eta", {
+      content,
+      title,
+      env: JSON.stringify({ interactionStyle, noteId }),
+      user,
+      interactionStyle:
+        interactionStyle !== "readOnly" ? "autofocus" : "readonly",
+    });
+  };
 
 // TODO: use promises a little better than I'm doing right now
 function configureRoutes(app: Express) {
   // root is read-only info page
-  app.get("/", async function (_, response) {
+  app.get("/", async function (request, response) {
     response.send(
-      await renderClient({
+      await renderClient(request)({
         content: homeScreenText,
         interactionStyle: "createOnEdit",
       })
@@ -74,7 +58,7 @@ function configureRoutes(app: Express) {
     const content = await recall(id);
     if (typeof content === "string") {
       response.send(
-        await renderClient({
+        await renderClient(request)({
           content: content,
           title: "quick-pad: note",
           noteId: id,
@@ -83,7 +67,7 @@ function configureRoutes(app: Express) {
       );
     } else {
       response.status(404).send(
-        await renderClient({
+        await renderClient(request)({
           content: noteNotFoundText,
           title: "quick-pad: note not found",
         })
@@ -117,9 +101,41 @@ function configureRoutes(app: Express) {
     response.status(200).json(statuses);
   });
 
-  app.get("*", async function (_, response) {
+  // --- Auth related endpoints ---
+  app.get(
+    "/auth/google",
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+    })
+  );
+
+  app.get(
+    "/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/failedlogin" }),
+    function (_, res) {
+      res.redirect("/");
+    }
+  );
+
+  app.get("/logout", function (req, res) {
+    req.logout();
+    res.redirect("/");
+  });
+
+  app.get("/failedlogin", async function (request, response) {
+    response.send(
+      await renderClient(request)({
+        content: failedLoginText,
+        interactionStyle: "readOnly",
+      })
+    );
+  });
+
+  // --- Finally, 404 ---
+
+  app.get("*", async function (request, response) {
     response.status(404).send(
-      await renderClient({
+      await renderClient(request)({
         content: pageNotFoundText,
         title: "quick-pad: page not found",
       })

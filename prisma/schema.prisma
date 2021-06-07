@@ -11,4 +11,13 @@ model notes {
   id      String   @id @db.VarChar(8)
   lastuse DateTime @db.Timestamp(6)
   content String
+  owner   User?    @relation(fields: [ownerId], references: [id])
+  ownerId Int?
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  google_id String  @unique
+  notes     notes[] @relation()
 }

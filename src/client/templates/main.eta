@@ -28,6 +28,12 @@
         <h2>recent notes <br>--- </h2>
         <ul id="note-list">
         </ul>
+        <% if (it.user) { %>
+          <div>Logged in as <%= it.user.email %></div>
+          <a class="log-in-out-link" href="/logout">Log Out</a>
+        <% } else { %>
+          <a class="log-in-out-link" href="/auth/google">Log in with Google...</a>
+        <% } %>
       </div>
     </div>
     <textarea <%= it.interactionStyle %> id="notepad" name="notepad"><%= it.content %></textarea>
