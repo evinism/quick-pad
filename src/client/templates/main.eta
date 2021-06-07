@@ -29,10 +29,10 @@
         <ul id="note-list">
         </ul>
         <% if (it.user) { %>
-          <div>Logged in as <%= it.user.displayName %></div>
-          <a href="/logout">Log Out</a>
+          <div>Logged in as <%= it.user.email %></div>
+          <a class="log-in-out-link" href="/logout">Log Out</a>
         <% } else { %>
-          <a href="/auth/google">Log in with Google...</a>
+          <a class="log-in-out-link" href="/auth/google">Log in with Google...</a>
         <% } %>
       </div>
     </div>

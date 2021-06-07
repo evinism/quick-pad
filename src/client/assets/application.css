@@ -31,10 +31,10 @@ textarea {
   overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
-  width: 200px;
+  width: 300px;
 }
 
-#note-list a {
+#note-list-wrapper a {
   color: inherit;
   white-space: nowrap;
   line-height: 21px;
@@ -45,7 +45,7 @@ textarea {
 }
 
 #note-list-wrapper > div {
-  width: 160px;
+  width: 240px;
 }
 
 #note-list-wrapper h2 {
@@ -70,9 +70,8 @@ textarea {
   background-color: rgba(238, 238, 238, 0.55);
 }
 
-
 .command-button {
-  background-color: rgba(238, 238, 238, 0.40);
+  background-color: rgba(238, 238, 238, 0.4);
   display: inline-block;
   width: 30px;
   height: 30px;
@@ -97,8 +96,9 @@ textarea {
   cursor: pointer;
 }
 
-.command-strip > .command-button.hoverable:hover, .command-strip > .command-button.active {
-  background-color: rgba(238, 238, 238, 0.80);
+.command-strip > .command-button.hoverable:hover,
+.command-strip > .command-button.active {
+  background-color: rgba(238, 238, 238, 0.8);
 }
 
 #viewer-count-indicator {
@@ -107,4 +107,13 @@ textarea {
 
 #view-count-indicator > * {
   margin: 7px 0;
+}
+
+.log-in-out-link {
+  display: block;
+  padding: 4px;
+  border: 1px solid #555;
+  text-align: center;
+  text-decoration: none;
+  margin: 4px 0;
 }
