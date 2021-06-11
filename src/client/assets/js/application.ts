@@ -67,7 +67,7 @@ function initRecentNotesLocal() {
       (a, b) => recentNotes.indexOf(a.id) - recentNotes.indexOf(b.id)
     );
 
-    renderRecentNotes(recentNotes);
+    renderRecentNotes(statuses);
     // and persist the notes that remain.
     const remainingIds = statuses.map((status) => status.id);
     if (pageLoadNoteId) {
