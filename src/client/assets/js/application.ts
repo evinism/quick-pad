@@ -17,14 +17,26 @@ type Message =
     };
 
 declare const Environment: any;
-const { interactionStyle, noteId: pageLoadNoteId } = Environment;
+const { interactionStyle, noteId: pageLoadNoteId, email } = Environment;
 
 const area = document.querySelector("textarea");
 
 enableTabsOnTextArea(area!);
 
+function renderRecentNotes(
+  recentNotes: { id: string; abbreviation: string }[]
+) {
+  const listHtml = recentNotes
+    .map(
+      ({ id, abbreviation }) =>
+        `<li><a href="/note/${id}/">${abbreviation || "[no title]"}</a></li>`
+    )
+    .reduce((a, b) => a + b, "");
+  document.getElementById("note-list")!.innerHTML = listHtml;
+}
+
 /* recent notes through localStorage */
-(function initRecentNotes() {
+function initRecentNotesLocal() {
   const recentNotes = JSON.parse(localStorage.getItem("notes") || "[]").filter(
     (record: string) => pageLoadNoteId !== record
   );
@@ -55,14 +67,7 @@ enableTabsOnTextArea(area!);
       (a, b) => recentNotes.indexOf(a.id) - recentNotes.indexOf(b.id)
     );
 
-    const listHtml = statuses
-      .map(
-        ({ id, abbreviation }) =>
-          `<li><a href="/note/${id}/">${abbreviation || "[no title]"}</a></li>`
-      )
-      .reduce((a, b) => a + b, "");
-    document.getElementById("note-list")!.innerHTML = listHtml;
-
+    renderRecentNotes(recentNotes);
     // and persist the notes that remain.
     const remainingIds = statuses.map((status) => status.id);
     if (pageLoadNoteId) {
@@ -70,7 +75,27 @@ enableTabsOnTextArea(area!);
     }
     localStorage.setItem("notes", JSON.stringify(remainingIds));
   }
-})();
+}
+
+function initRecentNotesServer() {
+  const fetchParams = {
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  };
+  const qs = pageLoadNoteId ? `?reject=${pageLoadNoteId}` : "";
+  fetch(`/recents${qs}`, fetchParams)
+    .catch(() => {})
+    .then((response) => response && response.json())
+    .then(renderRecentNotes);
+}
+
+if (email) {
+  initRecentNotesServer();
+} else {
+  initRecentNotesLocal();
+}
 
 /* Stupid state management soln: */
 interface ClientState {
@@ -193,8 +218,10 @@ if (interactionStyle === "editable") {
       const lsString = localStorage.getItem("notes") || "[]";
       const noteIds = JSON.parse(lsString);
       noteIds.unshift(newNoteId);
-      localStorage.setItem("notes", JSON.stringify(noteIds));
-
+      if (!email) {
+        // When logged in, we handle recents differently.
+        localStorage.setItem("notes", JSON.stringify(noteIds));
+      }
       history.replaceState(
         { newNoteId },
         "quick-pad: note",
