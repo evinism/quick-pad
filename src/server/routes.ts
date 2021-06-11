@@ -1,7 +1,13 @@
 import { renderFile } from "eta";
 import express, { Express } from "express";
 import passport from "passport";
-import { create, persist, recall, checkStatus } from "./store";
+import {
+  create,
+  persist,
+  recall,
+  checkStatus,
+  getRecentNotesForUser,
+} from "./store";
 import {
   homeScreenText,
   pageNotFoundText,
@@ -28,7 +34,11 @@ const renderClient =
     return renderFile("./main.eta", {
       content,
       title,
-      env: JSON.stringify({ interactionStyle, noteId }),
+      env: JSON.stringify({
+        interactionStyle,
+        noteId,
+        email: (user as any)?.email,
+      }),
       user,
       interactionStyle:
         interactionStyle !== "readOnly" ? "autofocus" : "readonly",
@@ -48,14 +58,14 @@ function configureRoutes(app: Express) {
   });
 
   // new will redirect to the properly
-  app.get("/new/", async function (_, response) {
-    const newId = await create();
+  app.get("/new/", async function (request, response) {
+    const newId = await create((request.user as any)?.id);
     response.redirect(`/note/${newId}/`);
   });
 
   app.get("/note/:id/", async function (request, response) {
     const id = request.params.id;
-    const content = await recall(id);
+    const content = await recall(id, (request.user as any)?.id);
     if (typeof content === "string") {
       response.send(
         await renderClient(request)({
@@ -80,6 +90,7 @@ function configureRoutes(app: Express) {
     response.status(200).json({ success: true });
   });
 
+  /* Paths for recent notes */
   app.post("/statusCheck", async function (request, response) {
     const ids = request.body.ids;
     if (!Array.isArray(ids)) {
@@ -97,8 +108,19 @@ function configureRoutes(app: Express) {
       response.status(200).json([]);
       return;
     }
-    const statuses = await checkStatus(ids);
-    response.status(200).json(statuses);
+    response.status(200).json(await checkStatus(ids));
+  });
+
+  app.get("/recents", async (request, response) => {
+    if (!request.user) {
+      response.status(400).json({ success: false });
+      return;
+    }
+    let recents = await getRecentNotesForUser((request.user as any).id);
+
+    response
+      .status(200)
+      .json(recents.filter(({ id }) => id !== request.query.reject));
   });
 
   // --- Auth related endpoints ---

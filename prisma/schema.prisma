@@ -16,8 +16,9 @@ model notes {
 }
 
 model User {
-  id        Int     @id @default(autoincrement())
-  email     String  @unique
-  google_id String  @unique
-  notes     notes[] @relation()
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  google_id String   @unique
+  recents   String[]
+  notes     notes[]  @relation()
 }
