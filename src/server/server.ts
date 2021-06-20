@@ -43,7 +43,9 @@ async function run() {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "bogus",
-      cookie: {},
+      cookie: {
+        expires: new Date(Date.now() + 365 * 86400 * 1000),
+      },
       store,
     })
   );
