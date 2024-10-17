@@ -8,7 +8,7 @@ import { config as etaConfig } from "eta";
 import morgan from "morgan";
 import session, { Store } from "express-session";
 import passport from "passport";
-import redis from "redis";
+import { createClient } from "redis";
 import RedisStore from "connect-redis";
 import "./passportconfig";
 
@@ -32,16 +32,13 @@ async function run() {
   app.use(express.json());
 
   let store: Store = new session.MemoryStore();
-  if (process.env.NODE_ENV === "production") {
-    const redisClient = redis
-      .createClient({
-        url: process.env.REDIS_URL,
-      })
-      .connect()
-      .catch(console.error);
+  if (process.env.NODE_ENV === "production" || true) {
+    const redisClient = createClient({
+      url: process.env.REDIS_URL,
+    });
+    redisClient.connect().catch(console.error);
     store = new RedisStore({
       client: redisClient,
-      prefix: "myapp:",
     });
   }
 
