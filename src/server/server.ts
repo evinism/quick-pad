@@ -32,7 +32,7 @@ async function run() {
   app.use(express.json());
 
   let store: Store = new session.MemoryStore();
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && !process.env.DISABLE_REDIS) {
     const redisClient = createClient({
       url: process.env.REDIS_URL,
     });
