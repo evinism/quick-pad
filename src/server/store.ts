@@ -47,9 +47,9 @@ export async function create(userId?: number) {
 // destroys notes that are greater than 30 days old;
 export function destroyOldNotes() {
   console.log("Deleting old notes...");
-  return prisma.$queryRaw(
+  return prisma.$queryRaw`
     "DELETE FROM notes WHERE lastuse <= (now() - interval '365 days');"
-  );
+  `;
 }
 
 const MAX_RECENT_NOTES = 500;

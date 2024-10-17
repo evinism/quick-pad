@@ -6,10 +6,10 @@ import express from "express";
 import enforce from "express-sslify";
 import { config as etaConfig } from "eta";
 import morgan from "morgan";
-import session from "express-session";
+import session, { Store } from "express-session";
 import passport from "passport";
 import redis from "redis";
-import connectRedis from "connect-redis";
+import RedisStore from "connect-redis";
 import "./passportconfig";
 
 import configureRoutes from "./routes.js";
@@ -31,18 +31,24 @@ async function run() {
 
   app.use(express.json());
 
-  let store = undefined;
+  let store: Store = new session.MemoryStore();
   if (process.env.NODE_ENV === "production") {
-    const redisClient = redis.createClient({
-      url: process.env.REDIS_URL,
+    const redisClient = redis
+      .createClient({
+        url: process.env.REDIS_URL,
+      })
+      .connect()
+      .catch(console.error);
+    store = new RedisStore({
+      client: redisClient,
+      prefix: "myapp:",
     });
-    const RedisStore = connectRedis(session);
-    store = new RedisStore({ client: redisClient });
   }
 
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "bogus",
+      resave: false,
       cookie: {
         expires: new Date(Date.now() + 365 * 86400 * 1000),
       },

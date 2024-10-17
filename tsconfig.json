@@ -5,6 +5,7 @@
     "esModuleInterop": true,
     "module": "commonjs",
     "strict": true,
+    "target": "ES2015",
     "allowSyntheticDefaultImports": true
   },
   "include": ["src/**/*", "bin/**/*"]
