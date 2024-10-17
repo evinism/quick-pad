@@ -35,6 +35,7 @@ async function run() {
   if (process.env.NODE_ENV === "production" && !process.env.DISABLE_REDIS) {
     const redisClient = createClient({
       url: process.env.REDIS_URL,
+      legacyMode: true,
     });
     redisClient.connect().catch(console.error);
     store = new RedisStore({
