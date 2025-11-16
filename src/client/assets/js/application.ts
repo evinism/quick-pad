@@ -23,9 +23,7 @@ const area = document.querySelector("textarea");
 
 enableTabsOnTextArea(area!);
 
-function renderRecentNotes(
-  recentNotes: { id: string; abbreviation: string }[]
-) {
+function renderRecentNotes(recentNotes: { id: string; abbreviation: string }[]) {
   const listHtml = recentNotes
     .map(
       ({ id, abbreviation }) =>
@@ -176,6 +174,7 @@ function hookIntoNoteChanges(noteId: string) {
       socket.send({
         type: "register",
         id: noteId,
+        email,
       });
     });
 
