@@ -1,0 +1,6 @@
+.github
+.git
+npm-debug.log
+.vscode
+.env
+.envrc
