@@ -65,7 +65,8 @@ function configureRoutes(app: Express) {
 
   app.get("/note/:id/", async function (request, response) {
     const id = request.params.id;
-    const content = await recall(id, (request.user as any)?.id);
+    const note = await recall(id);
+    const content = note?.content;
     if (typeof content === "string") {
       response.send(
         await renderClient(request)({
@@ -85,6 +86,7 @@ function configureRoutes(app: Express) {
     }
   });
 
+  // Post should go direct to db, but update memory cache if in use.
   app.post("/note/:id/", async function (request, response) {
     await persist(request.params.id, request.body.content || "");
     response.status(200).json({ success: true });

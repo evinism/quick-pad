@@ -1,50 +1,102 @@
 import { v4 } from "uuid";
 import { PrismaClient } from "@prisma/client";
+import { numClientsForId } from "./socket";
+
+// Mirrors schema.prisma, with the addition of a version number that is used for
+// OT.
+export type NoteInMemory = {
+  version: number;
+  id: string;
+  lastuse: Date;
+  content: string;
+  ownerId?: number;
+}
+
+// Memory-cache.
+export let notesInMemory = new Map<string, NoteInMemory>();
 
 export const prisma = new PrismaClient();
 
+// If clients connected, update memory cache. Otherwise, persist to db.
 export async function persist(id: string, content: string, userId?: number) {
-  await prisma.notes.update({
-    where: { id },
-    data: {
+  if (numClientsForId(id) > 0) {
+    notesInMemory.set(id, {
+      version: (notesInMemory.get(id)?.version ?? 0) + 1,
+      id,
       lastuse: new Date(),
-      content,
-      ownerId: userId,
-    },
-  });
-  await touch(id, userId);
+      content: content,
+      ownerId: userId ?? undefined,
+    });
+    console.log("Persisted note to memory cache", id);
+    console.log("Memory cache", notesInMemory);
+  } else {
+    await prisma.notes.update({
+      where: { id },
+      data: {
+        lastuse: new Date(),
+        content,
+        ownerId: userId ?? undefined,
+      },
+    });
+  }
+  if (userId) {
+    await touchUserRecent(id, userId);
+  }
   return { success: true };
 }
 
-export async function recall(id: string, userId?: number) {
-  const result = await prisma.notes.findUnique({ where: { id } });
-
-  // tee off, but don't wait for query to complete
-  if (result) {
-    touch(id, userId);
+// Load note from memory cache or db, and update memory cache.
+export async function recall(id: string) {
+  if (notesInMemory.has(id)) {
+    return notesInMemory.get(id);
   }
-  return result?.content;
+  const result = await prisma.notes.findUnique({ where: { id } });
+  if (result) {
+    const note: NoteInMemory = {
+      version: 0,
+      id,
+      lastuse: new Date(),
+      content: result.content,
+      ownerId: result.ownerId ?? undefined,
+    };
+    notesInMemory.set(id, note);
+    return notesInMemory.get(id);
+  }
+  return undefined;
 }
 
+// Check if note exists in memory cache, then db.
 export async function exists(id: string) {
+  if (notesInMemory.has(id)) {
+    return true;
+  }
   return !!(await prisma.notes.findUnique({ where: { id } }));
 }
 
+// Create new note in memory cache and db.
 export async function create(userId?: number) {
   // TODO: make this retry infinitely until a new id is found.
   let newId = v4().split("-")[0];
   console.log(`Creating note ${newId}`);
+  notesInMemory.set(newId, {
+    version: 0,
+    id: newId,
+    lastuse: new Date(),
+    content: "",
+    ownerId: userId ?? undefined,
+  });
   await prisma.notes.create({
     data: {
       id: newId,
       lastuse: new Date(),
       content: "",
+      ownerId: userId ?? undefined,
     },
   });
   return newId;
 }
 
-// destroys notes that are greater than 30 days old;
+// Destroy notes that are greater than 30 days old.
 export function destroyOldNotes() {
   console.log("Deleting old notes...");
   return prisma.$queryRaw`
@@ -54,31 +106,22 @@ export function destroyOldNotes() {
 
 const MAX_RECENT_NOTES = 500;
 
-export async function touch(id: string, userId?: number) {
-  await prisma.notes.update({
-    where: { id },
-    data: {
-      lastuse: new Date(),
-    },
+// Update lastuse timestamp for note.
+export async function touchUserRecent(id: string, userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
   });
-  if (userId) {
-    const user = await prisma.user.findUnique({
+  if (user) {
+    let { recents } = user;
+
+    // Add the recent notes
+    recents.unshift(id);
+
+    await prisma.user.update({
       where: { id: userId },
+      data: { recents },
     });
-    if (user) {
-      let { recents } = user;
-
-      // Add the recent notes
-      recents.unshift(id);
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: { recents },
-      });
-    }
   }
-
-  return { success: true };
 }
 
 const noteToRecentsRecord = ({
@@ -101,8 +144,15 @@ const noteToRecentsRecord = ({
 };
 
 export async function getRecentNotesForUser(userId: number) {
-  let { recents } = (await prisma.user.findUnique({ where: { id: userId } }))!;
-  recents = recents.slice(0, MAX_RECENT_NOTES);
+  let recentIdsInMemory = Array.from(notesInMemory.values())
+                         .filter((note) => note.ownerId === userId)
+                         .sort((a, b) => b.lastuse.getTime() - a.lastuse.getTime())
+                         .map((note) => note.id);
+  let recentsIdsInDb = (await prisma.user.findUnique({ where: { id: userId } }))!.recents;
+  console.log("Recent IDs in memory", recentIdsInMemory);
+  console.log("Recent IDs in db", recentsIdsInDb);
+  // Combine: DB recents first (already most recent first), then add memory IDs not in DB
+  let recents = [...recentIdsInMemory, ...recentsIdsInDb.filter(id => !recentIdsInMemory.includes(id))].slice(0, MAX_RECENT_NOTES);
   let actualNoteRecords = await prisma.notes.findMany({
     where: {
       id: {
@@ -128,15 +178,20 @@ export async function getRecentNotesForUser(userId: number) {
   return actualNoteRecords.map(noteToRecentsRecord);
 }
 
+// Check status of notes by id.
 export async function checkStatus(ids: string[]) {
-  const notes = await prisma.notes.findMany({
+  const idsInMemory = ids
+    .filter((id) => notesInMemory.has(id))
+    .map((id) => ({ id, content: notesInMemory.get(id)!.content }));
+  const idsInDb = (await prisma.notes.findMany({
     where: {
       id: {
         in: ids,
       },
     },
-  });
-  const statuses = notes.map(({ id, content }) => {
+  })).filter(note => !ids.includes(note.id)).map(note => ({ id: note.id, content: note.content }));
+  const idsToCheck = [...idsInMemory, ...idsInDb];
+  const statuses = idsToCheck.map(({ id, content }) => {
     let abbreviation = content.split("\n")[0];
     // Lol this is shit:
     const cutoff = 50;
@@ -156,7 +211,7 @@ export default {
   create,
   persist,
   recall,
-  touch,
+  touchUserRecent,
   exists,
   checkStatus,
   destroyOldNotes,
