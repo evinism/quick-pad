@@ -82,6 +82,22 @@ function initSockets(server: HTTPServer) {
       }
     });
 
+    /*
+      message interface:
+        {
+          type, // action to be taken
+          content, // value of the message
+          id, // note id (which we shouldn't even need for anything other than register)
+        }
+
+      server:
+        'update' broadcasts changes to all registered clients
+        'register' registers a client as observing a certain note
+      client: [id is not required]
+        'replace' replaces foreign content with local content
+        'viewerCount' indicates the viewer count has changed.
+    */
+
     ws.on("message", (message) => {
       switch (message.type) {
         case "register":
