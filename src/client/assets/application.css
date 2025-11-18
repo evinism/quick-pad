@@ -117,3 +117,7 @@ textarea {
   text-decoration: none;
   margin: 4px 0;
 }
+
+.log-in-out-link.hidden {
+  display: none;
+}

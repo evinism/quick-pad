@@ -35,6 +35,12 @@ function renderRecentNotes(
   document.getElementById("note-list")!.innerHTML = listHtml;
 }
 
+const showLogInOutLink = () => {
+  document
+    .getElementsByClassName("log-in-out-link")[0]!
+    .classList.remove("hidden");
+};
+
 /* recent notes through localStorage */
 function initRecentNotesLocal() {
   const recentNotes = JSON.parse(localStorage.getItem("notes") || "[]").filter(
@@ -55,9 +61,10 @@ function initRecentNotesLocal() {
       body: JSON.stringify({ ids: displayedRecentNotes }),
     };
     fetch("/statusCheck", fetchParams)
-      .catch(() => {})
+      .catch(showLogInOutLink)
       .then((response) => response && response.json())
-      .then(renderAndPersist);
+      .then(renderAndPersist)
+      .then(showLogInOutLink);
   } else {
     renderAndPersist([]);
   }
@@ -86,9 +93,10 @@ function initRecentNotesServer() {
   };
   const qs = pageLoadNoteId ? `?reject=${pageLoadNoteId}` : "";
   fetch(`/recents${qs}`, fetchParams)
-    .catch(() => {})
+    .catch(showLogInOutLink)
     .then((response) => response && response.json())
-    .then(renderRecentNotes);
+    .then(renderRecentNotes)
+    .then(showLogInOutLink);
 }
 
 if (email) {
@@ -239,3 +247,6 @@ if (interactionStyle === "editable") {
   };
   area!.addEventListener("input", enableEdit);
 }
+
+// catch-all in case of unexpected error somewhere
+setTimeout(showLogInOutLink, 1000);
