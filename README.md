@@ -4,7 +4,17 @@ This code is absolute garbage and should be cleaned up but:
 1: It kind of works anyways
 2: Load perf is pretty dang good. (because it's dead simple)
 
-##Contributing
+## Quick Start
+
+You can start the app locally (redis, postgres, and frontend) with Docker by running:
+
+```bash
+npm run up
+```
+
+Your local files will be bind-mounted and the app will be hot-reloaded.
+
+## Contributing
 
 Contributions are very very welcome. Please contribute.
 

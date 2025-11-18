@@ -1,0 +1,20 @@
+# Dev override for docker-compose.yml
+# Enables hot reload.
+services:
+  app:
+    image: node:latest
+    build: null  # Don't build, use base image
+    user: "${UID:-1000}:${GID:-1000}"  # Match host user to avoid permission issues
+    working_dir: /app
+    volumes:
+      # Bind mount source for hot reload
+      - .:/app
+    command: >
+      bash -c "
+        npm install &&
+        npx prisma migrate deploy &&
+        npm run dev-hot
+      "
+    restart: "no"  # Don't auto-restart in dev
+    ports:
+      - "${DOCKER_APP_PORT:-8080}:8080"
