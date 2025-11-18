@@ -4,7 +4,7 @@
   "description": "a quick notepad",
   "main": "src/start.ts",
   "engines": {
-    "node": "21.7.1"
+    "node": "24.x"
   },
   "scripts": {
     "start": "node build/start.js",
