@@ -104,12 +104,18 @@ interface ClientState {
 }
 
 let state: ClientState = {
-  sidebarShown: false,
+  sidebarShown: !!localStorage.getItem("sidebarShown"),
   viewerCount: 0,
 };
 
 function setState(newState: Partial<ClientState>) {
   state = Object.assign({}, state, newState);
+  // Not general, but totally fine for such a small app.
+  if (state.sidebarShown) {
+    localStorage.setItem("sidebarShown", "1");
+  } else {
+    localStorage.removeItem("sidebarShown");
+  }
   render(state);
 }
 

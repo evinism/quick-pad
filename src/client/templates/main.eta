@@ -36,6 +36,11 @@
         <% } %>
       </div>
     </div>
+    <script>
+      if (!!localStorage.getItem("sidebarShown")) {
+        document.getElementById("note-list-wrapper").classList.replace("hidden", "active");
+      }
+    </script>
     <textarea <%= it.interactionStyle %> id="notepad" name="notepad"><%= it.content %></textarea>
     <div class="command-strip">
       <div class="command-button hidden" id="viewer-count-indicator">
