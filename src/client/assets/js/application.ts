@@ -35,6 +35,8 @@ function renderRecentNotes(
   document.getElementById("note-list")!.innerHTML = listHtml;
 }
 
+// Wait to show the log in/out link until recent notes are loaded
+// This is to avoid a flash of the link when the page loads, which isn't super pretty
 const showLogInOutLink = () => {
   document
     .getElementsByClassName("log-in-out-link")[0]!
