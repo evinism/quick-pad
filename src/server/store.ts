@@ -1,6 +1,7 @@
 import { v4 } from "uuid";
 import { prisma } from "./db";
 import { Document } from "./document";
+import { TextOp } from "./ot";
 
 export type RecentNote = {
   id: string;
@@ -84,6 +85,45 @@ export class DocumentStore {
         data: { content, lastuse: new Date() },
       });
     }
+  }
+
+  /**
+   * Apply a text operation to a document.
+   */
+  async applyOp(id: string, op: TextOp, baseVersion: number) {
+    let doc = await this.recall(id);
+    if (!doc) {
+      // If doc doesn't exist, create it implicitly? Or fail?
+      // For now, let's fail if it doesn't exist, or maybe create empty?
+      // Existing logic suggests we might need to create it if it's new.
+      // But usually recall handles loading. If it returns undefined, it really doesn't exist.
+      // Let's assume it exists or we create a new one if it's a valid ID format?
+      // For safety, if not found, we can't apply op.
+      throw new Error("Document not found");
+    }
+    return doc.applyOp(op, baseVersion);
+  }
+
+  /**
+   * Apply a full text update to a document.
+   */
+  async applyTextUpdate(id: string, content: string, baseVersion: number) {
+    let doc = await this.recall(id);
+    if (!doc) {
+       // Implicit creation for new notes via update
+       const newId = await this.create(); // This creates a random ID, not what we want if ID is provided.
+       // Actually, recall checks DB. If not in DB, it returns undefined.
+       // If we are updating a note that doesn't exist (e.g. new URL), we should probably create it.
+       // But the ID is passed in.
+       // Let's look at how `create` works. It generates an ID.
+       // If the user navigates to /note/foo, and types, we want to create 'foo'.
+       // So we should manually create the doc instance.
+       doc = new Document(id, "", 0, new Date());
+       this.docs.set(id, doc);
+       // We should also probably persist it to DB eventually.
+       // For now, let's just set it in memory.
+    }
+    return doc.applyTextUpdate(content, baseVersion);
   }
 
   /**

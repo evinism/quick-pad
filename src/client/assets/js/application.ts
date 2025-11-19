@@ -5,15 +5,31 @@ import {
   noteUrlToNoteID,
   enableTabsOnTextArea,
 } from "./util.js";
+import {
+  ClientOTState,
+  PendingOp,
+  createInitialState,
+  handleLocalEdit,
+  handleServerOp,
+  transformPosition,
+  apply,
+} from "./ot-client.js";
 
 type Message =
   | {
       type: "replace";
       content: string;
+      version?: number;
     }
   | {
       type: "viewerCount";
       content: number;
+    }
+  | {
+      type: "op";
+      op: any;
+      version: number;
+      opId?: string;
     };
 
 declare const Environment: any;
@@ -164,6 +180,10 @@ document.getElementById("list-toggler")!.addEventListener(
 
 // Nonstatic page junk
 function hookIntoNoteChanges(noteId: string) {
+  /* OT state */
+  let otState: ClientOTState | null = null;
+  let lastLocalText = area!.value;
+
   /* saving logic */
   let save;
   let throttledSave: any;
@@ -181,8 +201,43 @@ function hookIntoNoteChanges(noteId: string) {
     socket.on("message", (message: Message) => {
       switch (message.type) {
         case "replace":
-          // TODO: move area.value to state tree.
+          // Legacy full-text replacement
           area!.value = message.content;
+          lastLocalText = message.content;
+          // Initialize OT state with server version
+          if (!otState) {
+            otState = createInitialState(noteId, message.content, message.version || 0);
+          } else {
+            // Update state if we get a replace while already initialized
+            otState = {
+              ...otState,
+              confirmedVersion: message.version || 0,
+              confirmedText: message.content,
+              outbox: [], // Clear outbox on full replacement
+            };
+          }
+          break;
+        case "op":
+          // OT operation from server
+          if (otState) {
+            const result = handleServerOp(
+              otState,
+              message.op,
+              message.version,
+              message.opId
+            );
+            otState = result.state;
+
+            // Update textarea if text changed
+            if (result.localText !== area!.value) {
+              const cursorPos = area!.selectionStart;
+              const transformedPos = transformPosition(cursorPos, message.op);
+              area!.value = result.localText;
+              area!.setSelectionRange(transformedPos, transformedPos);
+            }
+
+            lastLocalText = result.localText;
+          }
           break;
         case "viewerCount":
           setState({
@@ -195,11 +250,37 @@ function hookIntoNoteChanges(noteId: string) {
     });
 
     save = function () {
-      socket.send({
-        type: "update",
-        id: noteId,
-        content: area!.value,
-      });
+      if (otState) {
+        // OT mode: compute diff from confirmed state + outbox
+        const currentText = area!.value;
+
+        // Reconstruct what the text should be based on confirmed + outbox
+        let expectedText = otState.confirmedText;
+        for (const pending of otState.outbox) {
+          expectedText = apply(pending.op, expectedText);
+        }
+
+        // Only send if there's a difference
+        if (currentText !== expectedText) {
+          const result = handleLocalEdit(otState, expectedText, currentText);
+          otState = result.state;
+
+          socket.send({
+            type: "op",
+            id: noteId,
+            op: result.pendingOp.op,
+            version: result.pendingOp.baseVersion,
+            opId: result.pendingOp.opId,
+          });
+        }
+      } else {
+        // Fallback to legacy update
+        socket.send({
+          type: "update",
+          id: noteId,
+          content: area!.value,
+        });
+      }
     };
 
     throttledSave = throttle(save, 200);
