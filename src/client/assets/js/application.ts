@@ -1,20 +1,12 @@
-import io from "socket.io-client";
 import {
   throttle,
   debounce,
   noteUrlToNoteID,
   enableTabsOnTextArea,
 } from "./util.js";
-
-type Message =
-  | {
-      type: "replace";
-      content: string;
-    }
-  | {
-      type: "viewerCount";
-      content: number;
-    };
+import ShareDBClient from "sharedb/lib/client";
+import StringBinding from "sharedb-string-binding";
+import ReconnectingWebSocket from "reconnecting-websocket";
 
 declare const Environment: any;
 const { interactionStyle, noteId: pageLoadNoteId, email } = Environment;
@@ -166,62 +158,87 @@ document.getElementById("list-toggler")!.addEventListener(
 
 // Nonstatic page junk
 function hookIntoNoteChanges(noteId: string) {
-  /* saving logic */
-  let save;
-  let throttledSave: any;
-  let debouncedSave: any;
+  console.log('[ShareDB Client] hookIntoNoteChanges called for', noteId);
 
-  function attachSocketToApp(socket: any) {
-    socket.on("connect", () => {
-      socket.send({
-        type: "register",
-        id: noteId,
-      });
-    });
-
-    socket.on("message", (message: Message) => {
-      switch (message.type) {
-        case "replace":
-          // TODO: move area.value to state tree.
-          area!.value = message.content;
-          break;
-        case "viewerCount":
-          setState({
-            viewerCount: message.content,
-          });
-          break;
-        default:
-          console.warn(`Unknown message type ${(message as any).type}`);
-      }
-    });
-
-    save = function () {
-      socket.send({
-        type: "update",
-        id: noteId,
-        content: area!.value,
-      });
-    };
-
-    throttledSave = throttle(save, 200);
-    debouncedSave = debounce(save, 500);
+  // Open WebSocket connection to ShareDB server
+  let HOST = location.origin.replace(/^http/, "ws");
+  const params = new URLSearchParams();
+  params.set('noteId', noteId);
+  if (email) {
+    params.set('email', email);
   }
+  HOST += `?${params.toString()}`;
+  console.log('[ShareDB Client] Connecting to', HOST);
 
-  // configure socket
-  const HOST = location.origin.replace(/^http/, "ws");
-  const ws = io(HOST);
-  attachSocketToApp(ws);
+  const socket = new ReconnectingWebSocket(HOST, [], {
+    // ShareDB handles dropped messages, and buffering them while the socket
+    // is closed has undefined behavior
+    maxEnqueuedMessages: 0
+  });
 
-  // Event listeners
-  area!.addEventListener(
-    "input",
-    function () {
-      throttledSave();
-      debouncedSave();
-    },
-    false
-  );
+  socket.addEventListener('open', () => {
+    console.log('[ShareDB Client] WebSocket connected');
+  });
+
+  socket.addEventListener('close', (e: any) => {
+    console.log('[ShareDB Client] WebSocket closed, code:', e.code, 'reason:', e.reason);
+  });
+
+  socket.addEventListener('error', (e: any) => {
+    console.error('[ShareDB Client] WebSocket error:', e);
+  });
+
+  // Create ShareDB connection
+  const connection = new ShareDBClient.Connection(socket as any);
+  console.log('[ShareDB Client] ShareDB connection created');
+
+  // Subscribe to the document
+  const doc = connection.get('documents', noteId);
+  console.log('[ShareDB Client] Subscribing to doc...');
+
+  doc.subscribe(function(err: Error) {
+    if (err) {
+      console.error('[ShareDB Client] Subscription error:', err);
+      return;
+    }
+
+    console.log('[ShareDB Client] Subscribed! doc.type:', doc.type, 'doc.data:', doc.data);
+
+    if (doc.type === null) {
+      console.error('[ShareDB Client] ERROR: doc.type is null - document does not exist in ShareDB!');
+      return;
+    }
+
+    // Document should already exist (created when page was served)
+    console.log('[ShareDB Client] Setting up StringBinding...');
+    const binding = new StringBinding(area!, doc, ['content']);
+    binding.setup();
+    console.log('[ShareDB Client] StringBinding setup complete');
+
+    // Presence-based viewer count (using channel presence, not doc presence,
+    // because json0 doesn't support presence transforms)
+    const presence = connection.getPresence(noteId);
+    presence.subscribe(function(err?: Error) {
+      if (err) {
+        console.error('[ShareDB Client] Presence subscription error:', err);
+        return;
+      }
+
+      const localPresence = presence.create();
+      localPresence.submit(email ? { email } : {});
+
+      const updateViewerCount = () => {
+        const count = Object.keys(presence.remotePresences).length + 1;
+        setState({ viewerCount: count });
+      };
+
+      updateViewerCount();
+      presence.on('receive', updateViewerCount);
+    });
+  });
 }
+
+
 
 if (interactionStyle === "editable") {
   hookIntoNoteChanges(pageLoadNoteId);
