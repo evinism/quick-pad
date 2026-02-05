@@ -1,13 +1,8 @@
 import { renderFile } from "eta";
 import express, { Express } from "express";
 import passport from "passport";
-import {
-  create,
-  persist,
-  recall,
-  checkStatus,
-  getRecentNotesForUser,
-} from "./store";
+import { store } from "./store";
+import { prisma } from "./db";
 import {
   homeScreenText,
   pageNotFoundText,
@@ -59,13 +54,14 @@ function configureRoutes(app: Express) {
 
   // new will redirect to the properly
   app.get("/new/", async function (request, response) {
-    const newId = await create((request.user as any)?.id);
+    const newId = await store.create((request.user as any)?.id);
     response.redirect(`/note/${newId}/`);
   });
 
   app.get("/note/:id/", async function (request, response) {
     const id = request.params.id;
-    const content = await recall(id, (request.user as any)?.id);
+    const note = await store.recall(id);
+    const content = note?.content;
     if (typeof content === "string") {
       response.send(
         await renderClient(request)({
@@ -85,8 +81,9 @@ function configureRoutes(app: Express) {
     }
   });
 
+  // Post should go direct to db, but update memory cache if in use.
   app.post("/note/:id/", async function (request, response) {
-    await persist(request.params.id, request.body.content || "");
+    await store.update(request.params.id, request.body.content || "");
     response.status(200).json({ success: true });
   });
 
@@ -108,7 +105,7 @@ function configureRoutes(app: Express) {
       response.status(200).json([]);
       return;
     }
-    response.status(200).json(await checkStatus(ids));
+    response.status(200).json(await store.checkStatus(ids));
   });
 
   app.get("/recents", async (request, response) => {
@@ -116,7 +113,7 @@ function configureRoutes(app: Express) {
       response.status(400).json({ success: false });
       return;
     }
-    let recents = await getRecentNotesForUser((request.user as any).id);
+    let recents = await store.getRecentNotes((request.user as any).id);
 
     response
       .status(200)

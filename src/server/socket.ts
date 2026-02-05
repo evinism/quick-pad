@@ -1,13 +1,20 @@
 import { Server, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
-import { persist } from "./store.js";
+import { store } from "./store";
+import { prisma } from "./db";
 
 type Message = Object;
 
+const clientsOnIds: { [key: string]: Socket[] } = {};
+// Used to track when a user's session is active
+const clientsOnUsers: { [key: number]: number } = {}; // UserId -> socket count
+
+export function numClientsForId(id: string) {
+  return (clientsOnIds[id] || []).length;
+}
+
 function initSockets(server: HTTPServer) {
   const io = new Server(server);
-
-  let clientsOnIds: { [key: string]: Socket[] } = {};
 
   // fix duplication.
   function broadcastForId(message: Message, id: string, origin: Socket) {
@@ -22,74 +29,106 @@ function initSockets(server: HTTPServer) {
     currentClients.forEach((socket) => socket.send(message));
   }
 
-  function numClientsForId(id: string) {
-    return (clientsOnIds[id] || []).length;
-  }
-
-  function registerClientForId(ws: Socket, id: string) {
+  async function registerClientForId(ws: Socket, id: string, email?: string) {
+    // Register client for id
     const currentClients = clientsOnIds[id] || [];
     currentClients.push(ws);
     clientsOnIds[id] = currentClients;
+
+    let userId: number | undefined;
+
+    // Resolve user from email if provided
+    if (email) {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (user) {
+            userId = user.id;
+            // Register user session
+            clientsOnUsers[userId] = (clientsOnUsers[userId] || 0) + 1;
+            await store.initUser(userId);
+        }
+    }
+
+    // Recall note from store (loads from DB if needed)
+    const note = await store.recall(id);
+    if (note) {
+        ws.send({
+            type: "snapshot",
+            docId: id,
+            version: note.version,
+            text: note.content
+        });
+    }
 
     console.log("Client connected to note " + id);
     broadcastForAllInId(
       { type: "viewerCount", content: numClientsForId(id) },
       id
     );
+
+    return userId;
   }
 
-  function deregisterClientForId(ws: Socket, id: string) {
+  async function deregisterClientForId(ws: Socket, id: string, userId?: number) {
     const currentClients = clientsOnIds[id];
-    const idx = currentClients.indexOf(ws);
-    currentClients.splice(idx, 1);
-    clientsOnIds[id] = currentClients;
+    if (currentClients) {
+        const idx = currentClients.indexOf(ws);
+        if (idx !== -1) {
+            currentClients.splice(idx, 1);
+            clientsOnIds[id] = currentClients;
+        }
+    }
+
+    if (userId) {
+        clientsOnUsers[userId] = (clientsOnUsers[userId] || 1) - 1;
+        if (clientsOnUsers[userId] <= 0) {
+            delete clientsOnUsers[userId];
+            await store.cleanupUser(userId);
+        }
+    }
 
     console.log("Client disconnected for note " + id);
     broadcastForAllInId(
       { type: "viewerCount", content: numClientsForId(id) },
       id
     );
+
+    // Evict from memory if no clients are connected
+    if (numClientsForId(id) === 0) {
+      await store.evict(id);
+    }
   }
 
   io.on("connection", function (ws: Socket) {
     let id: string | undefined;
+    let userId: number | undefined;
+
     ws.on("disconnect", () => {
       if (id) {
-        deregisterClientForId(ws, id);
+        deregisterClientForId(ws, id, userId);
       }
     });
 
-    /*
-      message interface:
-        {
-          type, // action to be taken
-          content, // value of the message
-          id, // note id (which we shouldn't even need for anything other than register)
-        }
-
-      server:
-        'update' broadcasts changes to all registered clients
-        'register' registers a client as observing a certain note
-      client: [id is not required]
-        'replace' replaces foreign content with local content
-        'viewerCount' indicates the viewer count has changed.
-    */
-
-    ws.on("message", (message) => {
+    ws.on("message", async (message: any) => {
       switch (message.type) {
         case "register":
-          registerClientForId(ws, message.id);
           id = message.id;
+          // Register and get resolved userId
+          userId = await registerClientForId(ws, message.id, message.email);
           break;
         case "update":
-          // slap the same update command back to all users
-          broadcastForId(
-            { type: "replace", content: message.content },
-            message.id,
-            ws
-          );
-          // and persist changes to db
-          persist(message.id, message.content);
+           // Legacy update message
+           const doc = store.get(message.id);
+           if (doc) {
+               doc.updateContent(message.content);
+               if (userId) {
+                   store.touchRecent(userId, message.id, message.content);
+               }
+               broadcastForId(
+                { type: "replace", content: message.content },
+                message.id,
+                ws
+               );
+           }
           break;
         default:
           console.log(`Unknown message type "${message.type}"-- ignoring!`);
