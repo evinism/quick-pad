@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
 import { store } from "./store";
 import { prisma } from "./db";
+import { TextOp } from "./ot";
 
 type Message = Object;
 
@@ -51,12 +52,11 @@ function initSockets(server: HTTPServer) {
     // Recall note from store (loads from DB if needed)
     const note = await store.recall(id);
     if (note) {
-        ws.send({
-            type: "snapshot",
-            docId: id,
-            version: note.version,
-            text: note.content
-        });
+      ws.emit("message", {
+        type: "replace",
+        content: note.content,
+        version: note.version,
+      });
     }
 
     console.log("Client connected to note " + id);
@@ -116,19 +116,65 @@ function initSockets(server: HTTPServer) {
           userId = await registerClientForId(ws, message.id, message.email);
           break;
         case "update":
-           // Legacy update message
-           const doc = store.get(message.id);
-           if (doc) {
-               doc.updateContent(message.content);
-               if (userId) {
-                   store.touchRecent(userId, message.id, message.content);
-               }
-               broadcastForId(
-                { type: "replace", content: message.content },
+          // Legacy client sending full text update
+          try {
+            const doc = await store.recall(message.id);
+            if (doc) {
+              // If client doesn't send version, assume latest (legacy behavior)
+              // Ideally client should send the version it's basing this update on.
+              const baseVersion = (message as any).version ?? doc.version;
+
+              const result = await store.applyTextUpdate(
+                message.id,
+                message.content,
+                baseVersion
+              );
+
+              // Broadcast full replacement to legacy clients
+              // TODO: In the future, broadcast 'op' to OT-aware clients
+              broadcastForId(
+                { type: "replace", content: doc.content },
                 message.id,
                 ws
-               );
-           }
+              );
+
+              if (userId) {
+                store.touchRecent(userId, message.id, doc.content);
+              }
+            }
+          } catch (e) {
+            console.error("Error applying update:", e);
+          }
+          break;
+
+        case "op":
+          // OT-aware client sending operation
+          try {
+            const doc = await store.recall(message.id);
+            if (doc) {
+              const op = (message as any).op as TextOp;
+              const baseVersion = (message as any).version;
+
+              const result = await store.applyOp(message.id, op, baseVersion);
+
+              // Broadcast op to ALL clients (including sender)
+              broadcastForAllInId(
+                {
+                  type: "op",
+                  op: result.op,
+                  version: result.version,
+                  opId: (message as any).opId,
+                },
+                message.id
+              );
+
+              if (userId) {
+                store.touchRecent(userId, message.id, doc.content);
+              }
+            }
+          } catch (e) {
+             console.error("Error applying op:", e);
+          }
           break;
         default:
           console.log(`Unknown message type "${message.type}"-- ignoring!`);

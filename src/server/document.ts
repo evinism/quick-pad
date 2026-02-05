@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { TextOp, processOperation, processTextUpdate } from "./ot";
 
 export class Document {
   id: string;
@@ -6,6 +7,7 @@ export class Document {
   version: number;
   lastUsed: Date;
   ownerId: number | undefined;
+  opLog: Map<number, TextOp> = new Map();
 
   constructor(id: string, content: string, version: number, lastUsed: Date, ownerId?: number) {
     this.id = id;
@@ -44,6 +46,51 @@ export class Document {
     this.content = newContent;
     this.version++;
     this.touch();
+  }
+
+  /**
+   * Apply a text operation to the document.
+   */
+  applyOp(op: TextOp, baseVersion: number) {
+    const result = processOperation(
+      { version: this.version, content: this.content },
+      op,
+      baseVersion,
+      (v) => this.opLog.get(v)
+    );
+
+    this.content = result.newDocState.content;
+    this.version = result.newDocState.version;
+    this.opLog.set(this.version, result.opToBroadcast);
+    this.touch();
+
+    return {
+      op: result.opToBroadcast,
+      version: this.version,
+    };
+  }
+
+  /**
+   * Apply a full text update (diff) to the document.
+   */
+  applyTextUpdate(newContent: string, baseVersion: number) {
+    const result = processTextUpdate(
+      { version: this.version, content: this.content },
+      this.content,
+      newContent,
+      baseVersion,
+      (v) => this.opLog.get(v)
+    );
+
+    this.content = result.newDocState.content;
+    this.version = result.newDocState.version;
+    this.opLog.set(this.version, result.opToBroadcast);
+    this.touch();
+
+    return {
+      op: result.opToBroadcast,
+      version: this.version,
+    };
   }
 
   /**
