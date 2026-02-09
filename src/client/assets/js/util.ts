@@ -1,6 +1,6 @@
 export function enableTabsOnTextArea(area: HTMLTextAreaElement) {
   area.addEventListener("keydown", function (e) {
-    if (e.keyCode == 9 || e.which == 9) {
+    if (e.code == "Tab") {
       e.preventDefault();
       var s = this.selectionStart;
       this.value =
