@@ -14,7 +14,7 @@ import "./passportconfig";
 
 import configureRoutes from "./routes.js";
 import initSockets from "./socket.js";
-import initCron from "./fake_cron.js";
+import initCron from "./db.js";
 
 /* main function */
 async function run() {

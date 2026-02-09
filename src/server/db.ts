@@ -15,3 +15,14 @@ export async function getRecentNotesForUser(userId: number): Promise<RecentNote[
   if (!Array.isArray(recents)) return [];
   return recents.map(r => ({ id: r.id, title: r.title, lastUsed: new Date(r.lastUsed) }));
 }
+
+function initCron() {
+  setInterval(() => {
+    console.log("Deleting old notes...");
+    return prisma.$queryRaw`
+      DELETE FROM notes WHERE lastuse <= (now() - interval '365 days');
+    `;
+  }, 1000 * 60 * 60 * 24); // 1 day
+}
+
+export default initCron;

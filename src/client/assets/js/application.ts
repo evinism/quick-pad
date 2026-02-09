@@ -1,7 +1,4 @@
 import {
-  throttle,
-  debounce,
-  noteUrlToNoteID,
   enableTabsOnTextArea,
 } from "./util.js";
 import ShareDBClient from "sharedb/lib/client";
@@ -245,7 +242,8 @@ if (interactionStyle === "editable") {
 } else if (interactionStyle === "createOnEdit") {
   const enableEdit = function () {
     fetch("new").then((response) => {
-      const newNoteId = noteUrlToNoteID(response.url);
+      // Get the new note ID from the redirect URL
+      const newNoteId = response.url.split("/").slice(-2)[0];
       // on creation, append this note to start of local notes
       // TODO: this is not DRY at all
       const lsString = localStorage.getItem("notes") || "[]";
