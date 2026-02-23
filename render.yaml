@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: quickpad-rt
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: quickpad-rt-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: quickpad-rt-redis
+          type: redis
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+  - type: redis
+    name: quickpad-rt-redis
+    plan: free
+    ipAllowList: []
+
+databases:
+  - name: quickpad-rt-db
+    plan: free

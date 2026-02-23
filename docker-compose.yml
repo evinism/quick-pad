@@ -36,6 +36,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://quick-pad:password@db:5432/quick-pad
+      REDIS_URL: redis://redis:6379
     ports:
       - "${DOCKER_APP_PORT:-8080}:8080"
     restart: unless-stopped
