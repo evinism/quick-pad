@@ -28,20 +28,21 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install production dependencies only
-RUN npm ci --only=production && \
+# Install OpenSSL (required by Prisma) and production dependencies
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/* && \
+    npm ci --only=production && \
     npx prisma generate
 
 # Copy built artifacts from builder
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/src/client/templates ./src/client/templates
+COPY --from=builder /app/src/client/assets ./src/client/assets
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+# Use the existing non-root node user (UID 1000)
+RUN chown -R node:node /app
 
-USER appuser
+USER node
 
 EXPOSE 8080
 

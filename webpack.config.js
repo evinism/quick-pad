@@ -5,6 +5,13 @@ module.exports = {
     filename: "application.js",
     publicPath: "/",
   },
+  resolve: {
+    fallback: {
+      util: require.resolve("util/"),
+      buffer: require.resolve("buffer/"),
+      process: require.resolve("process/browser"),
+    },
+  },
   module: {
     rules: [
       {

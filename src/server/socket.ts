@@ -1,104 +1,107 @@
-import { Server, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
-import { persist } from "./store.js";
+import WebSocket from "ws";
+import WebSocketJSONStream from "@teamwork/websocket-json-stream";
+import { backend, getDocContent } from "./sharedb";
+import { prisma, getRecentNotesForUser } from "./db";
 
-type Message = Object;
+// Track connected clients per document ID for viewer counts
+const clientsOnIds: Map<string, Set<any>> = new Map();
 
 function initSockets(server: HTTPServer) {
-  const io = new Server(server);
+  console.log("[Socket] Initializing ShareDB WebSocket server");
 
-  let clientsOnIds: { [key: string]: Socket[] } = {};
+  // Create WebSocket server
+  const wss = new WebSocket.Server({ server });
 
-  // fix duplication.
-  function broadcastForId(message: Message, id: string, origin: Socket) {
-    const currentClients: Socket[] = clientsOnIds[id] || [];
-    currentClients
-      .filter((socket) => socket !== origin)
-      .forEach((socket) => socket.send(message));
-  }
+  // Connect middleware: resolve noteId + email from query string
+  backend.use('connect', async (context: any, callback: any) => {
+    const req = context.req;
+    if (!req?.url) return callback();
 
-  function broadcastForAllInId(message: Message, id: string) {
-    const currentClients = clientsOnIds[id] || [];
-    currentClients.forEach((socket) => socket.send(message));
-  }
+    let noteId: string | undefined;
+    let userId: number | undefined;
 
-  function numClientsForId(id: string) {
-    return (clientsOnIds[id] || []).length;
-  }
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      noteId = url.searchParams.get('noteId') || undefined;
+      const email = url.searchParams.get('email');
 
-  function registerClientForId(ws: Socket, id: string) {
-    const currentClients = clientsOnIds[id] || [];
-    currentClients.push(ws);
-    clientsOnIds[id] = currentClients;
-
-    console.log("Client connected to note " + id);
-    broadcastForAllInId(
-      { type: "viewerCount", content: numClientsForId(id) },
-      id
-    );
-  }
-
-  function deregisterClientForId(ws: Socket, id: string) {
-    const currentClients = clientsOnIds[id];
-    const idx = currentClients.indexOf(ws);
-    currentClients.splice(idx, 1);
-    clientsOnIds[id] = currentClients;
-
-    console.log("Client disconnected for note " + id);
-    broadcastForAllInId(
-      { type: "viewerCount", content: numClientsForId(id) },
-      id
-    );
-  }
-
-  io.on("connection", function (ws: Socket) {
-    let id: string | undefined;
-    ws.on("disconnect", () => {
-      if (id) {
-        deregisterClientForId(ws, id);
+      if (email) {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (user) {
+          userId = user.id;
+          console.log(`[ShareDB] Authenticated user ${user.id} (${email})`);
+        }
       }
-    });
+    } catch (e) {
+      // Ignore parse errors
+    }
 
-    /*
-      message interface:
-        {
-          type, // action to be taken
-          content, // value of the message
-          id, // note id (which we shouldn't even need for anything other than register)
+    context.agent.custom = context.agent.custom || {};
+    context.agent.custom.noteId = noteId;
+    context.agent.custom.userId = userId;
+
+    if (noteId) {
+      // Track this client on the document
+      if (!clientsOnIds.has(noteId)) {
+        clientsOnIds.set(noteId, new Set());
+      }
+      clientsOnIds.get(noteId)!.add(context.agent);
+      console.log(`[ShareDB] Client connected to ${noteId} (${clientsOnIds.get(noteId)!.size} viewers)`);
+
+      // Clean up when agent stream closes
+      context.agent.stream.once('close', async () => {
+        console.log(`[ShareDB] Close event fired for ${noteId}`);
+        const clients = clientsOnIds.get(noteId!);
+
+        // User session lifecycle: update recents for this note and persist
+        if (userId) {
+          const content = await getDocContent(noteId!);
+          const title = content?.split("\n")[0].slice(0, 50) || "";
+          const recents = await getRecentNotesForUser(userId);
+          const updated = recents.filter(r => r.id !== noteId);
+          updated.unshift({ id: noteId!, title, lastUsed: new Date() });
+
+          const recentsArray = updated
+              .slice(0, 500)
+              .map((r) => ({id: r.id, title: r.title, lastUsed: r.lastUsed.toISOString()}));
+          await prisma.user.update({
+            where: { id: userId },
+            data: { recents: recentsArray as any }
+          });
+          console.log(`[ShareDB] Persisted recents for user ${userId}`);
         }
 
-      server:
-        'update' broadcasts changes to all registered clients
-        'register' registers a client as observing a certain note
-      client: [id is not required]
-        'replace' replaces foreign content with local content
-        'viewerCount' indicates the viewer count has changed.
-    */
+        // If a note has no more clients, remove from map and persist note to Postgres
+        if (clients) {
+          clients.delete(context.agent);
+          console.log(`[ShareDB] Client disconnected from ${noteId} (${clients.size} viewers remaining)`);
 
-    ws.on("message", (message) => {
-      switch (message.type) {
-        case "register":
-          registerClientForId(ws, message.id);
-          id = message.id;
-          break;
-        case "update":
-          // slap the same update command back to all users
-          broadcastForId(
-            { type: "replace", content: message.content },
-            message.id,
-            ws
-          );
-          // and persist changes to db
-          persist(message.id, message.content);
-          break;
-        default:
-          console.log(`Unknown message type "${message.type}"-- ignoring!`);
-          break;
-      }
-    });
+          if (clients.size === 0) {
+            clientsOnIds.delete(noteId!);
+            // Last client - persist to Postgres
+            console.log(`[ShareDB] Last client left ${noteId}, persisting...`);
+            const content = await getDocContent(noteId!);
+            if (content !== null) {
+              await prisma.notes.update({
+                where: { id: noteId },
+                data: { content: content, lastuse: new Date() },
+              });
+            }
+          }
+        }
+      });
+    }
+
+    callback();
   });
 
-  return io;
+  wss.on("connection", function (ws: WebSocket, req) {
+    const stream = new WebSocketJSONStream(ws);
+    backend.listen(stream, req);
+  });
+
+  return wss;
 }
 
 export default initSockets;
